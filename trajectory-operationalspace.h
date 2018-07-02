@@ -46,10 +46,6 @@ namespace HQP {
 			void setDuration(const double & duration);
 			void setCurrentTime(const double & time);
 			void setStartTime(const double & time);
-			void Rot2euler(Matrix3d Rot, Vector3d & angle);
-			Matrix3d Rotate_with_X(double rAngle);
-			Matrix3d Rotate_with_Y(double rAngle);
-			Matrix3d Rotate_with_Z(double rAngle);
 			Vector3d GetPhi(Matrix3d Rot, Matrix3d Rotd);
 
 		protected:

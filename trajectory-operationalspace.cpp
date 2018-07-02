@@ -49,7 +49,7 @@ bool TrajectoryOperationConstant::has_trajectory_ended() const
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// Joint cubic Trajectory ////////////////////////////
+/////////////////////////////// Operational Space cubic Trajectory ////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
 TrajectoryOperationCubic::TrajectoryOperationCubic(const std::string & name)
@@ -81,15 +81,17 @@ const TrajectorySample & TrajectoryOperationCubic::operator()(double)
 const TrajectorySample & TrajectoryOperationCubic::computeNext()
 {
 
-	Vector3d init_rot;
-	Vector3d desired_rot;
 	Vector3d cubic_tra;
 	Vector3d cubic_rot_tra;
-	MatrixXd cubic_rot;
+	Matrix3d cubic_rot;
 	m_sample.resize(12, 6);
 	typedef Eigen::Matrix<double, 9, 1> Vector9;
-	Rot2euler(m_init.linear(), init_rot);
-	Rot2euler(m_goal.linear(), desired_rot);
+
+	Quaterniond quat_d(m_goal.linear());
+	Quaterniond quat_i(m_init.linear());
+	Vector3d desired_rot = quat_d.toRotationMatrix().eulerAngles(0, 1, 2);
+	Vector3d init_rot = quat_i.toRotationMatrix().eulerAngles(0, 1, 2);
+
 	
 	if (m_time < m_stime) {
 		m_sample.pos.head<3>() = m_init.translation();
@@ -129,13 +131,9 @@ const TrajectorySample & TrajectoryOperationCubic::computeNext()
 
 	}
 	
-	cubic_rot = Rotate_with_Z(cubic_rot_tra(2))*Rotate_with_Y(cubic_rot_tra(1))*Rotate_with_X(cubic_rot_tra(0));
+	cubic_rot = AngleAxisd(cubic_rot_tra(2), Vector3d::UnitZ())*AngleAxisd(cubic_rot_tra(1), Vector3d::UnitY())*AngleAxisd(cubic_rot_tra(0), Vector3d::UnitX());
 	m_cubic.translation() = cubic_tra;
-	m_cubic.linear() = m_init.linear()	;
-
-	
-
-	//std::cout << GetPhi(cubic_rot, m_goal.linear()) << std::endl;
+	m_cubic.linear() = cubic_rot;
 
 	m_sample.pos.head<3>() = m_cubic.translation();
 	m_sample.pos.tail<9>() = Eigen::Map<const Vector9>(&m_cubic.rotation()(0), 9);
@@ -175,85 +173,7 @@ void TrajectoryOperationCubic::setStartTime(const double & time)
 	m_stime = time;
 }
 
-void TrajectoryOperationCubic::Rot2euler(Matrix3d Rot, Vector3d & angle)
-{
-	double beta;
 
-	beta = -asin(Rot(2, 0));
-
-	if (abs(beta) < 90 * DEGREE)
-		beta = beta;
-	else
-		beta = 180 * DEGREE - beta;
-
-	angle(0) = atan2(Rot(2, 1), Rot(2, 2) + 1E-37); //x
-	angle(2) = atan2(Rot(1, 0), Rot(0, 0) + 1E-37); //z
-	angle(1) = beta; //y
-
-
-}
-
-Matrix3d TrajectoryOperationCubic::Rotate_with_X(double rAngle)
-{
-
-	Matrix3d _Rotate_wth_X;
-
-	_Rotate_wth_X(0, 0) = 1.0;
-	_Rotate_wth_X(1, 0) = 0.0;
-	_Rotate_wth_X(2, 0) = 0.0;
-
-	_Rotate_wth_X(0, 1) = 0.0;
-	_Rotate_wth_X(1, 1) = cos(rAngle);
-	_Rotate_wth_X(2, 1) = sin(rAngle);
-
-	_Rotate_wth_X(0, 2) = 0.0;
-	_Rotate_wth_X(1, 2) = -sin(rAngle);
-	_Rotate_wth_X(2, 2) = cos(rAngle);
-
-	return(_Rotate_wth_X);
-
-}
-
-Matrix3d TrajectoryOperationCubic::Rotate_with_Y(double rAngle)
-{
-		Matrix3d _Rotate_wth_Y(3, 3);
-
-		_Rotate_wth_Y(0, 0) = cos(rAngle);
-		_Rotate_wth_Y(1, 0) = 0.0;
-		_Rotate_wth_Y(2, 0) = -sin(rAngle);
-
-		_Rotate_wth_Y(0, 1) = 0.0;
-		_Rotate_wth_Y(1, 1) = 1.0;
-		_Rotate_wth_Y(2, 1) = 0.0;
-
-		_Rotate_wth_Y(0, 2) = sin(rAngle);
-		_Rotate_wth_Y(1, 2) = 0.0;
-		_Rotate_wth_Y(2, 2) = cos(rAngle);
-
-		return(_Rotate_wth_Y);
-
-}
-
-Matrix3d TrajectoryOperationCubic::Rotate_with_Z(double rAngle)
-{
-
-	Matrix3d _Rotate_wth_Z(3, 3);
-
-	_Rotate_wth_Z(0, 0) = cos(rAngle);
-	_Rotate_wth_Z(1, 0) = sin(rAngle);
-	_Rotate_wth_Z(2, 0) = 0.0;
-
-	_Rotate_wth_Z(0, 1) = -sin(rAngle);
-	_Rotate_wth_Z(1, 1) = cos(rAngle);
-	_Rotate_wth_Z(2, 1) = 0.0;
-
-	_Rotate_wth_Z(0, 2) = 0.0;
-	_Rotate_wth_Z(1, 2) = 0.0;
-	_Rotate_wth_Z(2, 2) = 1.0;
-
-	return(_Rotate_wth_Z);
-
-}
 
 Vector3d TrajectoryOperationCubic::GetPhi(Matrix3d Rot, Matrix3d Rotd)
 {
