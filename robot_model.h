@@ -62,7 +62,7 @@ namespace HQP {
 			const Type & type() {
 				return m_robot_type_;
 			}
-			const MotionVector<double> & getPointVeloecity(const int & frame_id) {
+			const MotionVector<double> & getPointVelocity(const int & frame_id) {
 				PointVelocity(frame_id);
 				return m_p_dot_;
 			}

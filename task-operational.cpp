@@ -125,7 +125,7 @@ namespace HQP
       
 	  m_robot.getUpdateKinematics(q, v);
 	  oMi = m_robot.getTransformation(m_frame_id);
-	  v_frame = m_robot.getPointVeloecity(m_frame_id);
+	  v_frame = m_robot.getPointVelocity(m_frame_id);
 	  m_drift.setZero(); // check acc
 	  //m_robot.frameClassicAcceleration(data, m_frame_id, m_drift);
 
