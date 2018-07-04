@@ -48,7 +48,7 @@ int main()
 
 	qdes = 30.0/180.0*3.14*VectorXd(7).setOnes();
 	postureTask = new tasks::TaskJointPosture("joint_control_task", *robot_);
-	double kp_posture = 300.0, w_posture = 1.00;
+	double kp_posture = 20.0, w_posture = 1.00;
 	postureTask->Kp(kp_posture*VectorXd::Ones(robot_->nq()));
 	postureTask->Kd(2.0*postureTask->Kp().cwiseSqrt());
 	invdyn_->addJointPostureTask(*postureTask, w_posture, 1, 0.0);
@@ -113,24 +113,6 @@ int main()
 					trajPosture->setStartTime(time);
 				}
 
-				//if (time == 0.5) {
-				//	//bool sucess = invdyn_->removeTask("joint_control_task", 0.0);
-				//	//cout << "remove joint task" << sucess << endl;
-
-				//	T_endeffector = robot_->getTransformation(7);
-				//	T_endeffector.translation()(2) -= 0.05;
-				//	
-				//	trajEE->setReference(T_endeffector);
-				//	s = trajEE->computeNext();
-
-				//	moveTask->setReference(s);
-				//	bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 0, 0.1);
-				//	cout << "add operational task" << " "<< sucess << endl;
-				//}
-				//if (time >= 0.5) {
-				//	s = trajEE->computeNext();
-				//	moveTask->setReference(s);
-				//}
 
 				const solver::HQPData & HQPData = invdyn_->computeProblemData(time, vb.current_q_, vb.current_qdot_);
 
@@ -142,17 +124,26 @@ int main()
 
 				trajPosture->setCurrentTime(time);
 				samplePosture = trajPosture->computeNext();
-	
 				postureTask->setReference(samplePosture);
 
 				const solver::HQPOutput & sol = solver->solve(HQPData);
+			
+
+				////////////// Write Solution ///////////////
+				#ifdef JOINTCTRL
+				const VectorXd & q = invdyn_->getJointPosition(sol);
+				vb.desired_q_ = q;
+				#else
 				const VectorXd & tau = invdyn_->getActuatorForces(sol);
 				const VectorXd & dv = invdyn_->getAccelerations(sol);
-				
+				vb.desired_torque_ = tau;
+
+				#endif // JOINTCTRL
+
+
 				if (time == 2.0)
 					cout << (qdes - vb.current_q_).norm() << endl;
 				
-				vb.desired_torque_ = tau;
 				vb.write();
 			}
 		

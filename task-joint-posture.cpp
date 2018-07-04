@@ -151,8 +151,8 @@ namespace HQP
 			m_v_error = m_v - m_ref.vel;
 
 			m_a_des = -m_Kp.cwiseProduct(m_p_error)
-				- m_Kd.cwiseProduct(m_v_error)
-				+ m_ref.acc;
+				- m_Kd.cwiseProduct(m_v_error);
+			//	+ m_ref.acc;
 
 			for (unsigned int i = 0; i < m_activeAxes.size(); i++)
 				m_constraint.vector()(i) = m_a_des(m_activeAxes(i));

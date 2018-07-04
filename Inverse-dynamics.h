@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+
 namespace HQP {
 
 	class TaskLevel
@@ -75,6 +76,7 @@ namespace HQP {
 
 		const VectorXd & getActuatorForces(const HQPOutput & sol);
 		const VectorXd & getAccelerations(const HQPOutput & sol);
+		const VectorXd & getJointPosition(const HQPOutput & sol);
 		HQPData & getHQPData() { return m_hqpData; };
 
 		void addTask(TaskLevel* task, double weight, unsigned int priorityLevel);
@@ -102,6 +104,7 @@ namespace HQP {
 		VectorXd m_dv;
 		VectorXd m_f;
 		VectorXd m_tau;
+		VectorXd m_q;
 		
 		//std::vector<ContactTransitionInfo*> m_contactTransitions;
 	};

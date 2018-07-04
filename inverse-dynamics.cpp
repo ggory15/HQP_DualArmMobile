@@ -169,8 +169,7 @@ const HQPData & InverseDynamics::computeProblemData(double time, VectorXd q, Vec
 	using namespace std;
 	
 	if (m_robot.type() == 0) {
-		const MatrixXd & M_a = m_robot.getMassMatrix();
-		const VectorXd & h_a = m_robot.getNLEtorque();
+
 
 		std::vector<TaskLevel*>::iterator it;
 		for (it = m_taskMotions.begin(); it != m_taskMotions.end(); it++)
@@ -208,26 +207,22 @@ bool InverseDynamics::decodeSolution(const HQPOutput & sol)
 		return true;
 
 	if (m_robot.type() == 0) {
+
+#ifdef JOINTCTRL
+	//	std::cout << sol.x.head(m_v).transpose() << std::endl;
+		m_q = m_robot.getJointPosition() + sol.x.head(m_v)*0.001;
+		m_solutionDecoded = true;
+#else
+		m_tau = sol.x.head(m_v);
 		const MatrixXd & M_a = m_robot.getMassMatrix();
 		const VectorXd & h_a = m_robot.getNLEtorque();
 		m_dv = sol.x.head(m_v);
 		m_tau = h_a;
-		m_tau.noalias() += M_a*m_dv;
-		
+		m_tau.noalias() += M_a * m_dv;
 		m_solutionDecoded = true;
-		
+#endif
 		return true;
 	}
-	//else if (m_robot.type == 1) {
-	//	const MatrixXd & M_a = m_robot.getMassMatrix().bottomRows(m_v - 6);
-	////	const VectorXd & h_a = m_robot.nonLinearEffects(m_data).tail(m_v - 6);
-	////	const MatrixXd & J_a = m_Jc.rightCols(m_v - 6);
-	//}
-	//else if (m_robot.type == 2) {
-	////	const MatrixXd & M_a = m_robot.mass(m_data).bottomRows(m_v - 6);
-	////	const VectorXd & h_a = m_robot.nonLinearEffects(m_data).tail(m_v - 6);
-	////	const MatrixXd & J_a = m_Jc.rightCols(m_v - 6);
-	//}
 }
 
 const VectorXd & InverseDynamics::getActuatorForces(const HQPOutput & sol)
@@ -241,6 +236,12 @@ const VectorXd & InverseDynamics::getAccelerations(const HQPOutput & sol)
 	decodeSolution(sol);
 	return m_dv;
 }
+const VectorXd & InverseDynamics::getJointPosition(const HQPOutput & sol)
+{
+	decodeSolution(sol);
+	return m_q;
+}
+
 bool InverseDynamics::removeTask(const std::string & taskName, double)
 {
 	bool taskFound = removeFromHqpData(taskName);
