@@ -26,7 +26,8 @@ InverseDynamics::InverseDynamics(RobotModel & robot, bool verbose)
 		m_eq = 6;
 
 	m_in = 0;
-	m_hqpData.resize(2);
+	m_bound = 0;
+	m_hqpData.resize(5);
 	//m_Jc.setZero(m_k, m_v);
 	//m_hqpData[0].push_back(make_pair<double, ConstraintBase*>(1.0, &m_baseDynamics));
 }	
@@ -43,6 +44,11 @@ unsigned int InverseDynamics::nEq() const
 unsigned int InverseDynamics::nIn() const
 {
 	return m_in;
+}
+
+unsigned int InverseDynamics::nBound() const
+{
+	return m_bound;
 }
 void InverseDynamics::resizeHqpData()
 {
@@ -74,7 +80,10 @@ void InverseDynamics::addTask(TaskLevel* tl, double weight, unsigned int priorit
 			m_in += c.rows();
 	}
 	else
+	{
 		tl->constraint = new ConstraintBound(c.name(), m_v + m_k);
+		m_bound += c.lowerBound().size();
+	}
 	m_hqpData[priorityLevel].push_back(make_pair<double, ConstraintBase*>(weight, tl->constraint));
 }
 
@@ -102,6 +111,26 @@ bool InverseDynamics::addMotionTask(TaskMotion & task, double weight, unsigned i
 
 bool InverseDynamics::addJointPostureTask(TaskJointPosture & task, 	double weight, 	unsigned int priorityLevel, double transition_duration)
 {
+	assert(weight >= 0.0);
+	assert(transition_duration >= 0.0);
+
+	// This part is not used frequently so we can do some tests.
+	if (weight >= 0.0)
+		std::cerr << __FILE__ << " " << __LINE__ << " "
+		<< "weight should be positive" << std::endl;
+
+	// This part is not used frequently so we can do some tests.
+	if (transition_duration >= 0.0) {
+		std::cerr << "transition_duration should be positive" << std::endl;
+	}
+
+	TaskLevel *tl = new TaskLevel(task, priorityLevel);
+	m_taskMotions.push_back(tl);
+	addTask(tl, weight, priorityLevel);
+
+	return true;
+}
+bool InverseDynamics::addJointLimitTask(TaskJointLimit & task, double weight, unsigned int priorityLevel, double transition_duration) {
 	assert(weight >= 0.0);
 	assert(transition_duration >= 0.0);
 
@@ -169,7 +198,8 @@ const HQPData & InverseDynamics::computeProblemData(double time, VectorXd q, Vec
 	using namespace std;
 	
 	if (m_robot.type() == 0) {
-
+		const MatrixXd & M_a = m_robot.getMassMatrix();
+		const VectorXd & h_a = m_robot.getNLEtorque();
 
 		std::vector<TaskLevel*>::iterator it;
 		for (it = m_taskMotions.begin(); it != m_taskMotions.end(); it++)
@@ -207,22 +237,28 @@ bool InverseDynamics::decodeSolution(const HQPOutput & sol)
 		return true;
 
 	if (m_robot.type() == 0) {
-
-#ifdef JOINTCTRL
-	//	std::cout << sol.x.head(m_v).transpose() << std::endl;
-		m_q = m_robot.getJointPosition() + sol.x.head(m_v)*0.001;
-		m_solutionDecoded = true;
-#else
-		m_tau = sol.x.head(m_v);
 		const MatrixXd & M_a = m_robot.getMassMatrix();
 		const VectorXd & h_a = m_robot.getNLEtorque();
 		m_dv = sol.x.head(m_v);
 		m_tau = h_a;
-		m_tau.noalias() += M_a * m_dv;
+		m_tau.noalias() += M_a*m_dv;
+
+		m_slack.resize(7);
+		m_slack = sol.x.tail(7);
 		m_solutionDecoded = true;
-#endif
+	
 		return true;
 	}
+	//else if (m_robot.type == 1) {
+	//	const MatrixXd & M_a = m_robot.getMassMatrix().bottomRows(m_v - 6);
+	////	const VectorXd & h_a = m_robot.nonLinearEffects(m_data).tail(m_v - 6);
+	////	const MatrixXd & J_a = m_Jc.rightCols(m_v - 6);
+	//}
+	//else if (m_robot.type == 2) {
+	////	const MatrixXd & M_a = m_robot.mass(m_data).bottomRows(m_v - 6);
+	////	const VectorXd & h_a = m_robot.nonLinearEffects(m_data).tail(m_v - 6);
+	////	const MatrixXd & J_a = m_Jc.rightCols(m_v - 6);
+	//}
 }
 
 const VectorXd & InverseDynamics::getActuatorForces(const HQPOutput & sol)
@@ -236,12 +272,10 @@ const VectorXd & InverseDynamics::getAccelerations(const HQPOutput & sol)
 	decodeSolution(sol);
 	return m_dv;
 }
-const VectorXd & InverseDynamics::getJointPosition(const HQPOutput & sol)
-{
+const VectorXd & InverseDynamics::getSlack(const HQPOutput & sol) {
 	decodeSolution(sol);
-	return m_q;
+	return m_slack;
 }
-
 bool InverseDynamics::removeTask(const std::string & taskName, double)
 {
 	bool taskFound = removeFromHqpData(taskName);
@@ -258,6 +292,8 @@ bool InverseDynamics::removeTask(const std::string & taskName, double)
 					m_eq -= (*it)->constraint->rows();
 				else if ((*it)->constraint->isInequality())
 					m_in -= (*it)->constraint->rows();
+				else if ((*it)->constraint->isBound())
+					m_bound -= (*it)->constraint->lowerBound().size();
 			}
 			m_taskMotions.erase(it);
 			return true;

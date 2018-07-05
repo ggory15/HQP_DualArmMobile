@@ -79,12 +79,6 @@ void VRepBridge::simInit()
 
 void VRepBridge::write()
 {
-#ifdef JOINTCTRL
-	for (size_t i = 0;i < MOTORNUM;i++)
-		simxSetJointTargetPosition(clientID_, motorHandle_[i], desired_q_(i), simx_opmode_streaming);
-
-
-#else
 	for (size_t i = 0; i < MOTORNUM; i++) {
 		simxFloat velLimit;
 
@@ -95,10 +89,7 @@ void VRepBridge::write()
 
 		simxSetJointTargetVelocity(clientID_, motorHandle_[i], velLimit, simx_opmode_streaming);
 		simxSetJointForce(clientID_, motorHandle_[i], static_cast<float>(abs(desired_torque_(i))), simx_opmode_streaming);
-}
-#endif // 
-
-
+	}
 }
 void VRepBridge::read()
 {

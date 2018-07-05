@@ -26,10 +26,6 @@ namespace HQP {
 			~RobotModel();
 
 			void getUpdateKinematics(const VectorXd & q, const VectorXd & qdot);
-			VectorXd getJointPosition()
-			{
-				return q_rbdl_;
-			}
 			const MatrixXd & getJacobian(const int & frame_id) { 
 				Jacobian(frame_id);
 				return m_J_; 
@@ -66,11 +62,10 @@ namespace HQP {
 			const Type & type() {
 				return m_robot_type_;
 			}
-			const MotionVector<double> & getPointVelocity(const int & frame_id) {
+			const MotionVector<double> & getPointVeloecity(const int & frame_id) {
 				PointVelocity(frame_id);
 				return m_p_dot_;
 			}
-			
 		
 		private:			
 			void Jacobian(const int & frame_id);

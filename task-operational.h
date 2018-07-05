@@ -57,7 +57,6 @@ namespace HQP
 	  VectorXd m_Kp;
 	  VectorXd m_Kd;
 	  VectorXd m_a_des;
-	  VectorXd m_v_des;
 	  MotionVector<double> m_drift;
       Matrix6x m_J;
       ConstraintEquality m_constraint;

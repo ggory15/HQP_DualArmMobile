@@ -135,8 +135,3 @@ void HQP::robot::RobotModel::PointVelocity(const int & frame_id) {
 	m_p_dot_.linear() = p_dot_.tail<3>();
 }
 
-//void HQP::robot::RobotModel::JointPosition(const int & frame_id) {
-//	p_dot_ = CalcPointVelocity6D(*model_, q_rbdl_, qdot_rbdl_, body_id_[frame_id - 1], com_position_[frame_id - 1]);
-//	m_p_dot_.angular() = p_dot_.head<3>();
-//	m_p_dot_.linear() = p_dot_.tail<3>();
-//}

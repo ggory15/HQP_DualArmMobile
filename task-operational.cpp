@@ -27,7 +27,6 @@ namespace HQP
       m_Kp.setZero(6);
       m_Kd.setZero(6);
       m_a_des.setZero(6);
-	  m_v_des.setZero(dof);
       m_J.setZero(6, robot.nv());
     }
 
@@ -120,62 +119,18 @@ namespace HQP
 
     const ConstraintBase & TaskOperationalSpace::compute(const double t, Cref_vectorXd q, Cref_vectorXd v)
     {
-
-	#ifdef JOINTCTRL
-
-		Transform3d oMi;
-		MotionVector<double> v_frame;
-
-		m_robot.getUpdateKinematics(q, v);
-		oMi = m_robot.getTransformation(m_frame_id);
-		v_frame = m_robot.getPointVelocity(m_frame_id);
-		m_drift.setZero(); // check acc
-						   //m_robot.frameClassicAcceleration(data, m_frame_id, m_drift);
-
-						   // Transformation from local to world
-		m_wMl.linear() = oMi.linear();
-
-		Transform3d b;
-		b = m_M_ref.inverse() * oMi;
-
-		m_p_error = log6(b);
-		m_v_error = v_frame - m_v_ref.actInv(oMi); //check actInv
-
-		m_p_error_vec = m_p_error.vector();
-		m_v_error_vec = m_v_error.vector();
-
-		m_p_ref.head<3>() = m_M_ref.translation();
-		typedef Eigen::Matrix<double, 9, 1> Vector9;
-		m_p_ref.tail<9>() = Eigen::Map<const Vector9>(&m_M_ref.rotation()(0), 9);
-
-		m_v_ref_vec = m_v_ref.vector();
-
-		m_p.head<3>() = oMi.translation();
-		m_p.tail<9>() = Eigen::Map<const Vector9>(&oMi.rotation()(0), 9);
-
-		m_v = v_frame.vector();
-
-		m_v_des = -m_Kp.cwiseProduct(m_p_error.vector())
-			- m_Kd.cwiseProduct(m_v_error.vector());
-
-		  m_J = m_robot.getJacobian(m_frame_id); //check world jacobian
-		  m_constraint.setMatrix(m_J);
-		  m_constraint.setVector(m_v_des);
-
-
-	#else
-
-	  Transform3d oMi;
-	  MotionVector<double> v_frame;
-
+	
+      Transform3d oMi;
+      MotionVector<double> v_frame;
+      
 	  m_robot.getUpdateKinematics(q, v);
 	  oMi = m_robot.getTransformation(m_frame_id);
-	  v_frame = m_robot.getPointVelocity(m_frame_id);
+	  v_frame = m_robot.getPointVeloecity(m_frame_id);
 	  m_drift.setZero(); // check acc
-						 //m_robot.frameClassicAcceleration(data, m_frame_id, m_drift);
+	  //m_robot.frameClassicAcceleration(data, m_frame_id, m_drift);
 
-						 // Transformation from local to world
-	  m_wMl.linear() = oMi.linear();
+      // Transformation from local to world
+      m_wMl.linear() = oMi.linear();
 
 	  Transform3d b;
 	  b = m_M_ref.inverse() * oMi;
@@ -189,25 +144,22 @@ namespace HQP
 	  m_p_ref.head<3>() = m_M_ref.translation();
 	  typedef Eigen::Matrix<double, 9, 1> Vector9;
 	  m_p_ref.tail<9>() = Eigen::Map<const Vector9>(&m_M_ref.rotation()(0), 9);
-
-	  m_v_ref_vec = m_v_ref.vector();
+		
+      m_v_ref_vec = m_v_ref.vector();
 
 	  m_p.head<3>() = oMi.translation();
 	  m_p.tail<9>() = Eigen::Map<const Vector9>(&oMi.rotation()(0), 9);
 
-	  m_v = v_frame.vector();
+      m_v = v_frame.vector();
 
 	  m_a_des = -m_Kp.cwiseProduct(m_p_error.vector())
-		  - m_Kd.cwiseProduct(m_v_error.vector())
-		  + m_a_ref.actInv(m_wMl).vector();
+		        - m_Kd.cwiseProduct(m_v_error.vector())
+		        + m_a_ref.actInv(m_wMl).vector();
 
 	  m_J = m_robot.getJacobian(m_frame_id); //check world jacobian
 
-	  m_constraint.setMatrix(m_J);
-	  m_constraint.setVector(m_a_des);
-
-
-	#endif // JOINTCTRL
+      m_constraint.setMatrix(m_J);
+      m_constraint.setVector(m_a_des);
       return m_constraint;
     }    
   }
