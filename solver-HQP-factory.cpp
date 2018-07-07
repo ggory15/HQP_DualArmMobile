@@ -2,6 +2,7 @@
 //#include <tsid/solvers/solver-HQP-eiquadprog.hpp>
 //#include <tsid/solvers/solver-HQP-eiquadprog-fast.hpp>
 #include "solver-HQP-qpoases.h"
+#include "solver-HQP-eiquadprog.h"
 
 namespace HQP
 {
@@ -11,9 +12,9 @@ namespace HQP
     SolverHQPBase* SolverHQPFactory::createNewSolver(const SolverHQP solverType,
                                                      const std::string & name)
     {
-      //if(solverType==SOLVER_HQP_EIQUADPROG)
-      //  return new SolverHQuadProg(name);
-      //
+      if(solverType==SOLVER_HQP_EIQUADPROG)
+        return new SolverHQuadProg(name);
+      
       //if(solverType==SOLVER_HQP_EIQUADPROG_FAST)
       //  return new SolverHQuadProgFast(name);
       //

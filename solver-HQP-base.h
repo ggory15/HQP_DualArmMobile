@@ -25,7 +25,7 @@ namespace HQP
 
       virtual const std::string & name() { return m_name; }
 
-      virtual void resize(unsigned int n, unsigned int neq, unsigned int nin) = 0;
+      virtual void resize(unsigned int n, unsigned int neq, unsigned int nin, unsigned int nbound) = 0;
 
       virtual const HQPOutput & solve(const HQPData & problemData) = 0;
 

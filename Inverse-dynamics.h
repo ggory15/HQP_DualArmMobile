@@ -12,6 +12,7 @@
 #include "task-com.h"
 #include "task-joint-posture.h"
 #include "task-operational.h"
+#include "task-joint-bounds.h"
 // for solvers
 #include "solver-HQP-qpoases.h"
 
@@ -53,6 +54,7 @@ namespace HQP {
 		// typedef tasks::TaskCom TaskCom;
 		typedef tasks::TaskJointPosture TaskJointPosture;
 		typedef tasks::TaskOperationalSpace TaskSE3Equality;
+		typedef tasks::TaskJointLimit TaskJointLimit;
 		//typedef tasks::TaskContactForce TaskContactForce;
 		//typedef tasks::TaskActuation TaskActuation;
 		typedef solver::HQPOutput HQPOutput;
@@ -64,9 +66,11 @@ namespace HQP {
 		unsigned int nVar() const;
 		unsigned int nEq() const;
 		unsigned int nIn() const;
+		unsigned int nBound() const;
 
 		bool addMotionTask(TaskMotion & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addJointPostureTask(TaskJointPosture & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
+		bool addJointLimitTask(TaskJointLimit & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addOperationalTask(TaskSE3Equality & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 
 		bool updateTaskWeight(const std::string & task_name, double weight);
@@ -75,6 +79,7 @@ namespace HQP {
 
 		const VectorXd & getActuatorForces(const HQPOutput & sol);
 		const VectorXd & getAccelerations(const HQPOutput & sol);
+		const VectorXd & getSlack(const HQPOutput & sol);
 		HQPData & getHQPData() { return m_hqpData; };
 
 		void addTask(TaskLevel* task, double weight, unsigned int priorityLevel);
@@ -95,6 +100,7 @@ namespace HQP {
 		unsigned int m_v;   /// number of acceleration variables
 		unsigned int m_eq;  /// number of equality constraints
 		unsigned int m_in;  /// number of inequality constraints
+		unsigned int m_bound;
 		//MatrixXd m_Jc;        /// contact force Jacobian
 		constraint::ConstraintEquality m_baseDynamics;
 
@@ -102,6 +108,7 @@ namespace HQP {
 		VectorXd m_dv;
 		VectorXd m_f;
 		VectorXd m_tau;
+		VectorXd m_slack;
 		
 		//std::vector<ContactTransitionInfo*> m_contactTransitions;
 	};

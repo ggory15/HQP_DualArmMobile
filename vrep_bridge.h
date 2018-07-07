@@ -3,7 +3,7 @@
 #include <string>
 #include <functional>
 #include <Eigen/Dense>
-
+#include "motion.h"
 using namespace std;
 
 extern "C" {
@@ -59,6 +59,10 @@ public:
 	Eigen::Vector3d torque_;
 	Eigen::Vector3d desired_obs_pos;
 	Eigen::Vector3d target_pos;
+	Eigen::Vector3d euler_;
+
+	Transform3d H_transform_;
+	HQP::MotionVector<double> H_vel_;
 
 	const size_t getTick() { return tick_; }
 
@@ -74,7 +78,9 @@ public:
 private:
 	simxInt clientID_;
 	simxInt motorHandle_[MOTORNUM];	/// < Depends on simulation envrionment
+	simxInt baseHandle_[4];
 	simxInt objectHandle_;
+	simxInt StateEstimator_;
 	simxInt Obstacle;
 	simxInt Target;
 	simxInt Collection_;
