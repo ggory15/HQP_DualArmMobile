@@ -63,8 +63,8 @@ int main()
 	q_lb = -180.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
 	q_ub = -1.0*q_lb;
 	//q_ub(5) = 45.0 * M_PI / 180.0;
-	q_lb.head(2) = -1.0 * VectorXd(2).setOnes();
-	q_ub.head(2) = 1.0 * VectorXd(2).setOnes();
+	q_lb.head(2) = -5.0 * VectorXd(2).setOnes();
+	q_ub.head(2) = 5.0 * VectorXd(2).setOnes();
 
 	jointLimitTask = new tasks::TaskJointLimit("joint_limit_task", *robot_);
 	double kp_jointlimit = 30.0, w_jointlimit = 1.00;
@@ -142,19 +142,22 @@ int main()
 				
 				q_current.setZero(); 
 				q_current.head<2>() = vb.H_transform_.translation().head(2);
-				
 				q_current(2) = vb.euler_(2);
+				q_current(3) = 0.0;
+				q_current(4) = 0.0;			
 				q_current.tail<dof>() = vb.current_q_;
 
 				qdot_current.setZero();
 				qdot_current.head<2>() = vb.H_vel_.linear().head(2);
 				qdot_current(2) = vb.H_vel_.angular()(2);
+				qdot_current(3) = vb.current_base_vel_(0);
+				qdot_current(4) = vb.current_base_vel_(1);
 				qdot_current.tail(dof) = vb.current_qdot_;
 				
 				robot_->getUpdateKinematics(q_current, qdot_current);
 				if (time == 1.0 / Hz) {
 					T_endeffector = robot_->getTransformation(7);
-					T_endeffector.translation()(0) -= 0.1;
+					T_endeffector.translation()(0) -= 0.5;
 
 					trajEE->setReference(T_endeffector);
 					s = trajEE->computeNext();
@@ -180,8 +183,14 @@ int main()
 			//	cout << "sovler end" << endl;
 				const VectorXd & tau = invdyn_->getActuatorForces(sol);
 				const VectorXd & dv = invdyn_->getAccelerations(sol);
-				cout << dv.transpose() << endl;
+				
+				vb.desired_base_vel_(0) = dv(0);
+				vb.desired_base_vel_(1) = dv(1);
+				vb.desired_base_vel_(2) = dv(1);
+				vb.desired_base_vel_(3) = dv(0);
 
+
+				
 				vb.desired_torque_ = tau;
 				vb.write();
 			}

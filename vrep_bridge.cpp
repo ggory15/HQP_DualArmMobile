@@ -52,6 +52,8 @@ void VRepBridge::dataInit()
 	target_x_.setZero();	
 	desired_torque_.resize(MOTORNUM);
 	desired_torque_.setZero();
+	current_base_vel_.resize(4);
+	desired_base_vel_.resize(4);
 
 	force_.setZero();
 	desired_obs_pos.setZero();
@@ -91,6 +93,8 @@ void VRepBridge::write()
 		simxSetJointTargetVelocity(clientID_, motorHandle_[i], velLimit, simx_opmode_streaming);
 		simxSetJointForce(clientID_, motorHandle_[i], static_cast<float>(abs(desired_torque_(i))), simx_opmode_streaming);
 	}
+	for (size_t i = 0; i < 4; i++)
+		simxSetJointTargetVelocity(clientID_, baseHandle_[i], desired_base_vel_(i), simx_opmode_streaming);
 }
 void VRepBridge::read()
 {
@@ -102,6 +106,12 @@ void VRepBridge::read()
 
 		simxGetObjectFloatParameter(clientID_, motorHandle_[i], 2012, &data, simx_opmode_streaming);
 		current_qdot_(i) = data;
+	}
+	for (size_t i = 0; i < 4; i++)
+	{
+		simxFloat data;
+		simxGetObjectFloatParameter(clientID_, baseHandle_[i], 2012, &data, simx_opmode_streaming);
+		current_base_vel_(i) = data;
 	}
 
 	simxFloat data[3];

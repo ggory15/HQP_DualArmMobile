@@ -60,6 +60,7 @@ public:
 	Eigen::Vector3d desired_obs_pos;
 	Eigen::Vector3d target_pos;
 	Eigen::Vector3d euler_;
+	Eigen::VectorXd desired_base_vel_, current_base_vel_;
 
 	Transform3d H_transform_;
 	HQP::MotionVector<double> H_vel_;
