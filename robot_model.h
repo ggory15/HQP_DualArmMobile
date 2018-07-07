@@ -76,6 +76,12 @@ namespace HQP {
 				qdot_real_.tail(m_nv_) = qdot_rbdl_.tail(m_nv_);
 				return qdot_real_;
 			}
+			const Transform3d & getMobileTransformation() {
+				return m_base_;
+			}
+			const MotionVector<double> & getMobileVelocity() {
+				return m_mobile_dot_;
+			}
 
 		private:			
 			void Jacobian(const int & frame_id);
@@ -124,10 +130,12 @@ namespace HQP {
 			Matrix3d m_Ori_;
 			MatrixXd m_J_;
 			MotionVector<double> m_p_dot_;
+			MotionVector<double> m_mobile_dot_;
 			MatrixXd m_selection_;
 			MatrixXd m_selection_dot_;
 
 			Transform3d m_Trans_;
+			Transform3d m_base_;
 
 			Type m_robot_type_;
 

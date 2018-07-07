@@ -82,9 +82,9 @@ void HQP::robot::RobotModel::setRobot() {
 	
 	//// for wheel
 	virtual_body_[3] = Body(2.6 *2.0, Math::Vector3d(0.0, 0.0, 0.0), Math::Matrix3d(0.001, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1));
-	virtual_joint_[3] = Joint(JointTypeRevolute, Eigen::Vector3d::UnitY());
+	virtual_joint_[3] = Joint(JointTypeRevolute, -Eigen::Vector3d::UnitY());
 	virtual_body_[4] = Body(2.6*2.0, Math::Vector3d(0.0, 0.0, 0.0), Math::Matrix3d(0.001, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1));
-	virtual_joint_[4] = Joint(JointTypeRevolute, -1.0*Eigen::Vector3d::UnitY());
+	virtual_joint_[4] = Joint(JointTypeRevolute, 1.0*Eigen::Vector3d::UnitY());
 
 	model_->AddBody(base_id_, Math::Xtrans(Math::Vector3d(0.0, 0.25, 0.165)), virtual_joint_[3], virtual_body_[3]);
 	model_->AddBody(base_id_, Math::Xtrans(Math::Vector3d(0.0, -0.25, 0.165)), virtual_joint_[4], virtual_body_[4]);
@@ -185,6 +185,24 @@ void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const Vecto
 	qddot_rbdl_.setZero();
 	UpdateKinematics(*model_, q_rbdl_, qdot_rbdl_, qddot_rbdl_);
 
+	// for mobile
+	m_base_.setIdentity();
+	Matrix3d rot;
+	rot.setIdentity();
+	rot(0, 0) = cos(q(2));
+	rot(0, 1) = -sin(q(2));
+	rot(1, 0) = -sin(q(2));
+	rot(1, 1) = cos(q(2));
+
+	m_base_.rotate(AngleAxisd(q(2), Vector3d::UnitZ()));
+	//m_base_.linear() = rot;
+	m_base_.translation().head(2) = q.head(2);
+
+	m_mobile_dot_.setZero();
+	m_mobile_dot_.linear().head(2) = qdot.head(2);
+	m_mobile_dot_.angular()(2) = qdot(2);
+
+	// for selection matrix
 	double r = 0.165, b = 0.5, d = 0.05, c = r / (2.0 * b);
 	
 	m_selection_.bottomRightCorner(m_na_ + 2, m_na_ + 2).setIdentity();
@@ -192,8 +210,8 @@ void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const Vecto
 	m_selection_(0, 1) = c*(b*cos(q(2)) + d*sin(q(2)));
 	m_selection_(1, 0) = c*(b*sin(q(2)) + d*cos(q(2)));
 	m_selection_(1, 1) = c*(b*sin(q(2)) - d*cos(q(2)));
-	m_selection_(2, 0) = c;
-	m_selection_(2, 1) = -c;
+	m_selection_(2, 0) = -c;
+	m_selection_(2, 1) = c;
 	m_selection_(3, 0) = 1.0;
 	m_selection_(4, 1) = 1.0;
 }

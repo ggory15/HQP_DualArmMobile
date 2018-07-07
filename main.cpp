@@ -11,6 +11,7 @@
 #include "task-operational.h"
 #include "task-joint-posture.h"
 #include "task-joint-bounds.h"
+#include "task-mobile.h"
 
 // for trajectories 
 #include "trajectory-operationalspace.h"
@@ -28,6 +29,7 @@ HQP::robot::RobotModel * robot_;
 HQP::InverseDynamics * invdyn_;
 HQP::tasks::TaskJointPosture * postureTask;
 HQP::tasks::TaskOperationalSpace * moveTask;
+HQP::tasks::TaskMobile * mobileTask;
 HQP::tasks::TaskJointLimit * jointLimitTask;
 VectorXd q(dof);
 VectorXd qdot(dof);
@@ -89,14 +91,24 @@ int main()
 	moveTask->Kp(kp_move*VectorXd::Ones(6));
 	moveTask->Kd(2.0*moveTask->Kp().cwiseSqrt());
 
+	mobileTask = new tasks::TaskMobile("mobile_task", *robot_);
+	double kp_mobile = 300.0, w_mobile = 1.0;
+	mobileTask->Kp(kp_mobile*VectorXd::Ones(6));
+	mobileTask->Kd(2.0*mobileTask->Kp().cwiseSqrt());
+
+
 	trajectories::TrajectoryBase *trajPosture = new trajectories::TrajectoryJointConstant("joint_traj", qdes);
 	trajectories::TrajectorySample samplePosture(robot_->nv()-2);
-	//
+	
 	Transform3d T_endeffector;
 	trajectories::TrajectorySample s(12, 6);
 	trajectories::TrajectoryOperationConstant *trajEE = new trajectories::TrajectoryOperationConstant("operational_traj", T_endeffector);
+	
+	Transform3d T_mobile;
+	trajectories::TrajectorySample s_mobile(12, 6);
+	trajectories::TrajectoryOperationConstant *trajmobile = new trajectories::TrajectoryOperationConstant("mobile_traj", T_mobile);
+	
 	solver->resize(invdyn_->nVar(), invdyn_->nEq(), invdyn_->nIn(), invdyn_->nBound());
-
 	// for v-rep
 	VRepBridge vb;
 	vb.isSimulationRun = false;
@@ -158,16 +170,28 @@ int main()
 				if (time == 1.0 / Hz) {
 					T_endeffector = robot_->getTransformation(7);
 					T_endeffector.translation()(0) -= 0.5;
+					T_endeffector.translation()(1) -= 0.1;
+					T_endeffector.translation()(2) -= 0.1;
 
 					trajEE->setReference(T_endeffector);
 					s = trajEE->computeNext();
-
 					moveTask->setReference(s);
+
 					bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);	
+
+					T_mobile = robot_->getMobileTransformation();
+					T_mobile.setIdentity();
+					T_mobile.rotate(AngleAxisd(0.5, Vector3d::UnitZ()));
+					trajmobile->setReference(T_mobile);
+					s_mobile = trajmobile->computeNext();
+					mobileTask->setReference(s_mobile);
+					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);
 				}
 			
 				s = trajEE->computeNext();
 				moveTask->setReference(s);
+				s_mobile = trajmobile->computeNext();
+				mobileTask->setReference(s_mobile);
 
 				samplePosture = trajPosture->computeNext();
 				postureTask->setReference(samplePosture);
@@ -176,8 +200,11 @@ int main()
 				if (time == 1 / Hz)
 					cout << solver::HQPDataToString(HQPData, true) << endl;
 
+				cout << "mobile" << robot_->getMobileTransformation().rotation()(1) << endl;
+				cout << "q2" << q_current(2) << endl;
+				cout << "mani" << robot_->getTransformation(7).rotation()(1) << endl;
 
-
+			//	getchar();
 			//	cout << "sovler start" << endl;
 				const solver::HQPOutput & sol = solver->solve(HQPData);
 			//	cout << "sovler end" << endl;

@@ -13,6 +13,7 @@
 #include "task-joint-posture.h"
 #include "task-operational.h"
 #include "task-joint-bounds.h"
+#include "task-mobile.h"
 // for solvers
 #include "solver-HQP-qpoases.h"
 

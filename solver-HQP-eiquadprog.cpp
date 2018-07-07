@@ -201,13 +201,13 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 
 		if (m_objValue[c_level] == std::numeric_limits<double>::infinity()) {
 			m_output.status = HQP_STATUS_INFEASIBLE;
-	/*		cout << "m_H" << m_H[c_level].transpose() << endl;
+			cout << "m_H" << m_H[c_level].transpose() << endl;
 			cout << "m_g" << m_g[c_level].transpose() << endl;
 			cout << "m_CI" << m_CI[c_level] << endl;
 			cout << "m_ci0" << m_ci0[c_level].transpose() << endl;
 			cout << "m_CE" << m_CE[c_level] << endl;
 			cout << "m_ce0" << m_ce0[c_level].transpose() << endl;
-			getchar();*/
+			getchar();
 		}
 		else
 		{
