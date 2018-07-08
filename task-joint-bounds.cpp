@@ -59,11 +59,11 @@ namespace HQP
 			  }
 			  for (int i = 2; i < m_robot.nv(); i++) {
 				  if (q(i+3) < m_q_lbound(i) + m_buffer) {
-					  m_constraint.lowerBound()(i) = m_Kp(i) * ((m_q_lbound(i) + m_buffer) - q(i+3)) - m_Kd(i) * v(i);
+					  m_constraint.lowerBound()(i) = m_Kp(i) * ((m_q_lbound(i) + m_buffer) - q(i+3)) - 2.0*m_Kd(i) * v(i+3);
 					  m_constraint.upperBound()(i) = 200.0;
 				  }
 				  else if (q(i+3) > m_q_ubound(i) - m_buffer) {
-					  m_constraint.upperBound()(i) = m_Kp(i) * ((m_q_ubound(i) - m_buffer) - q(i+3)) - m_Kd(i) * v(i);
+					  m_constraint.upperBound()(i) = m_Kp(i) * ((m_q_ubound(i) - m_buffer) - q(i+3)) - 2.0*m_Kd(i) * v(i+3);
 					  m_constraint.lowerBound()(i) = -200.0;
 				  }
 				  else {

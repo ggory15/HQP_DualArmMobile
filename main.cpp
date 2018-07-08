@@ -62,7 +62,7 @@ int main()
 	
 
 	// Level 0 : Joint Velocity Limit for Mobile + Manipulator 
-	q_lb = -180.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
+	q_lb = -120.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
 	q_ub = -1.0*q_lb;
 	//q_ub(5) = 45.0 * M_PI / 180.0;
 	q_lb.head(2) = -30.0 * VectorXd(2).setOnes();
@@ -107,12 +107,21 @@ int main()
 	
 	Transform3d T_endeffector;
 	trajectories::TrajectorySample s(12, 6);
-	trajectories::TrajectoryOperationConstant *trajEE = new trajectories::TrajectoryOperationConstant("operational_traj", T_endeffector);
+	//trajectories::TrajectoryOperationConstant *trajEE = new trajectories::TrajectoryOperationConstant("operational_traj", T_endeffector);
 	
 	Transform3d T_mobile;
+	Transform3d init_M;
+	Transform3d init_M_m;
+	Transform3d goal_M;
+	Transform3d goal_M_m;
+	double duration;
+	double stime;
 	trajectories::TrajectorySample s_mobile(12, 6);
-	trajectories::TrajectoryOperationConstant *trajmobile = new trajectories::TrajectoryOperationConstant("mobile_traj", T_mobile);
-	
+	//trajectories::TrajectoryOperationConstant *trajmobile = new trajectories::TrajectoryOperationConstant("mobile_traj", T_mobile);
+	trajectories::TrajectoryOperationCubic *trajmobile = new trajectories::TrajectoryOperationCubic("mobile_traj", init_M_m, goal_M_m, duration, stime);
+
+	trajectories::TrajectoryOperationCubic *trajEE = new trajectories::TrajectoryOperationCubic("endeffector_traj", init_M, goal_M,duration,stime);
+
 	solver->resize(invdyn_->nVar(), invdyn_->nEq(), invdyn_->nIn(), invdyn_->nBound());
 	// for v-rep
 	VRepBridge vb;
@@ -173,32 +182,71 @@ int main()
 				
 				robot_->getUpdateKinematics(q_current, qdot_current);
 				if (time == 1.0 / Hz) {
-					T_endeffector = robot_->getTransformation(7);
-					T_endeffector.translation()(0) += 0.2;
+
+					// * Cubic  trajectory
+					init_M = robot_->getTransformation(7);
+					goal_M = init_M;
+					goal_M.translation()(0) += 0.2;
+					trajEE->setInitSample(init_M);
+					trajEE->setStartTime(0.0);
+					trajEE->setGoalSample(goal_M);
+					trajEE->setDuration(3.0);
+
+					// * Step input
+					//T_endeffector = robot_->getTransformation(7);
+					//T_endeffector.translation()(0) += 0.2;
+					//trajEE->setReference(T_endeffector);
+					//s = trajEE->computeNext();
+					//moveTask->setReference(s);
+
 
 					cout << "des" << T_endeffector.matrix() << endl;
 					cout << "real" << robot_->getTransformation(7).matrix() << endl;
 		
-					trajEE->setReference(T_endeffector);
-					s = trajEE->computeNext();
-					moveTask->setReference(s);
-					
+
+
 					bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);	
 
-					T_mobile = robot_->getMobileTransformation();
+					// * Cubic trajectory 
+					init_M_m = robot_->getMobileTransformation();
+					init_M_m.setIdentity();
+					goal_M_m = init_M_m;
+					goal_M_m.rotate(AngleAxisd(0.5, Vector3d::UnitZ()));
+
+					trajmobile->setInitSample(init_M_m);
+					trajmobile->setGoalSample(goal_M_m);
+					trajmobile->setDuration(3.0);
+					trajmobile->setStartTime(0.0);
+
+					// * Step input
+					//T_mobile = robot_->getMobileTransformation();
+					//T_mobile.setIdentity();
+					//T_mobile.rotate(AngleAxisd(0.5, Vector3d::UnitZ()));
+					//trajmobile->setReference(T_mobile);
+					//s_mobile = trajmobile->computeNext();
+					//mobileTask->setReference(s_mobile);
 					
-					T_mobile.setIdentity();
-					T_mobile.rotate(AngleAxisd(0.5, Vector3d::UnitZ()));
-					trajmobile->setReference(T_mobile);
-					s_mobile = trajmobile->computeNext();
-					mobileTask->setReference(s_mobile);
+					
 					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);
+
+					
+
 				}
-			
+				// *EE task
+				trajEE->setCurrentTime(time); // cubic trajectory
 				s = trajEE->computeNext();
 				moveTask->setReference(s);
+
+				// *Mobile task
+				trajmobile->setCurrentTime(time); // cubic trajectory
 				s_mobile = trajmobile->computeNext();
 				mobileTask->setReference(s_mobile);
+
+				if (time == 1.0)
+					invdyn_->removeTask("joint_control_task");
+					//invdyn_->removeTask("mobile_task", 0.0);
+					
+			
 
 				samplePosture = trajPosture->computeNext();
 				postureTask->setReference(samplePosture);
@@ -212,6 +260,7 @@ int main()
 			//	cout << "sovler start" << endl;
 				const solver::HQPOutput & sol = solver->solve(HQPData);
 			//	cout << "sovler end" << endl;
+				//cout << vb.current_qdot_.tail(dof).transpose() << endl;
 				const VectorXd & tau = invdyn_->getActuatorForces(sol);
 				const VectorXd & dv = invdyn_->getAccelerations(sol);
 				

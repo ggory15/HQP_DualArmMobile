@@ -344,6 +344,7 @@ bool InverseDynamics::removeFromHqpData(const std::string & name)
 	{
 		for (ConstraintLevel::iterator itt = it->begin(); !found && itt != it->end(); itt++)
 		{
+			std::cout << itt->second->name() << std::endl;
 			if (itt->second->name() == name)
 			{
 				it->erase(itt);
