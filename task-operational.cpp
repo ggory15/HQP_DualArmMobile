@@ -136,10 +136,10 @@ namespace HQP
 
 	  Transform3d b;
 	  b = m_M_ref.inverse() * oMi;
-
 	  m_p_error = log6(b);
-	  m_v_error = v_frame - m_v_ref.actInv(oMi); //check actInv
-
+	  
+	  m_v_error = v_frame - m_v_ref; //check actInv
+	  m_v_error = actinv(oMi, m_v_error.vector());
 	  m_p_error_vec = m_p_error.vector();
 	  m_v_error_vec = m_v_error.vector();
 
@@ -157,9 +157,12 @@ namespace HQP
 	  m_a_des = -m_Kp.cwiseProduct(m_p_error.vector())
 		       - m_Kd.cwiseProduct(m_v_error.vector())
 		       + m_a_ref.actInv(m_wMl).vector();
+	  m_J = m_robot.getJacobian(m_frame_id);
 
-	  m_J = m_robot.getJacobian(m_frame_id); //check world jacobian
-
+	  for (int i = 0; i < m_J.cols(); i++) {
+		  m_J.middleCols(i, 1) = actinv(oMi, m_J.middleCols(i, 1)).vector();
+	  } // world jacobian to local jacobian
+	 
       m_constraint.setMatrix(m_J);
       m_constraint.setVector(m_a_des);
       return m_constraint;

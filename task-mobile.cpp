@@ -139,7 +139,9 @@ namespace HQP
 			b = m_M_ref.inverse() * oMi;
 
 			m_p_error = log6(b);
-			m_v_error = v_frame - m_v_ref.actInv(oMi); 
+			m_v_error = v_frame - m_v_ref; 
+
+			m_v_error = actinv(oMi, m_v_error.vector());
 
 			///////// if only orientation control /////////////////
 
@@ -163,6 +165,10 @@ namespace HQP
 
 			m_J = m_robot.getJacobian(7); //check world jacobian
 			m_J.block(0, 2, 6, m_robot.nv() - 2).setZero();
+
+			for (int i = 0; i < m_J.cols(); i++) {
+				m_J.middleCols(i, 1) = actinv(oMi, m_J.middleCols(i, 1)).vector();
+			} // world jacobian to local jacobian
 
 			if (m_ori_ctrl) { // if you want to control mobile orientation only
 				Vector3d b = m_a_des.tail(3);

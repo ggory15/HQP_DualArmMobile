@@ -65,8 +65,8 @@ int main()
 	q_lb = -180.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
 	q_ub = -1.0*q_lb;
 	//q_ub(5) = 45.0 * M_PI / 180.0;
-	q_lb.head(2) = -5.0 * VectorXd(2).setOnes();
-	q_ub.head(2) = 5.0 * VectorXd(2).setOnes();
+	q_lb.head(2) = -30.0 * VectorXd(2).setOnes();
+	q_ub.head(2) = 30.0 * VectorXd(2).setOnes();
 
 	jointLimitTask = new tasks::TaskJointLimit("joint_limit_task", *robot_);
 	double kp_jointlimit = 30.0, w_jointlimit = 1.00;
@@ -76,9 +76,14 @@ int main()
 	
 	invdyn_->addJointLimitTask(*jointLimitTask, w_jointlimit, 0, 0.0);
 
-	qdes = 30.0 / 180.0*3.14*VectorXd(7).setZero();
-	qdes(3) = 90.0 * M_PI/180.0;
+	qdes = 30.0 / 180.0 * 3.14*VectorXd(7).setZero();
+	qdes.setZero();
+	//qdes(1) = 30.0 * M_PI / 180.0;
+	qdes(3) = -90.0 * M_PI/180.0;
 	qdes(5) = -90.0 * M_PI / 180.0; 
+	//qdes(3) = 90.0 * M_PI / 180.0;
+	//qdes(5) = -90.0 * M_PI / 180.0;
+
 
 	postureTask = new tasks::TaskJointPosture("joint_control_task", *robot_);
 	double kp_posture = 30.0, w_posture = 1.00;
@@ -169,17 +174,19 @@ int main()
 				robot_->getUpdateKinematics(q_current, qdot_current);
 				if (time == 1.0 / Hz) {
 					T_endeffector = robot_->getTransformation(7);
-					T_endeffector.translation()(0) -= 0.5;
-					T_endeffector.translation()(1) -= 0.1;
-					T_endeffector.translation()(2) -= 0.1;
+					T_endeffector.translation()(0) += 0.2;
 
+					cout << "des" << T_endeffector.matrix() << endl;
+					cout << "real" << robot_->getTransformation(7).matrix() << endl;
+		
 					trajEE->setReference(T_endeffector);
 					s = trajEE->computeNext();
 					moveTask->setReference(s);
-
+					
 					bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);	
 
 					T_mobile = robot_->getMobileTransformation();
+					
 					T_mobile.setIdentity();
 					T_mobile.rotate(AngleAxisd(0.5, Vector3d::UnitZ()));
 					trajmobile->setReference(T_mobile);
@@ -200,10 +207,7 @@ int main()
 				if (time == 1 / Hz)
 					cout << solver::HQPDataToString(HQPData, true) << endl;
 
-				cout << "mobile" << robot_->getMobileTransformation().rotation()(1) << endl;
-				cout << "q2" << q_current(2) << endl;
-				cout << "mani" << robot_->getTransformation(7).rotation()(1) << endl;
-
+			
 			//	getchar();
 			//	cout << "sovler start" << endl;
 				const solver::HQPOutput & sol = solver->solve(HQPData);

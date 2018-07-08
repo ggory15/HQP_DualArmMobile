@@ -183,8 +183,8 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 		  // slack variable for lb and ub
 		m_CI[c_level].block(m_CI[c_level].rows() - m_slack * 2, m_CI[c_level].cols() - m_slack, m_slack, m_slack) = -1.0 * MatrixXd::Identity(m_slack, m_slack);
 		m_CI[c_level].bottomRightCorner(m_slack, m_slack) = 1.0 * MatrixXd::Identity(m_slack, m_slack);
-		m_ci0[c_level].tail(m_slack * 2) = 1000.0 * VectorXd(m_slack * 2).setOnes();
-		m_ci0[c_level].tail(m_slack) = 1000.0 * VectorXd(m_slack).setOnes();
+		m_ci0[c_level].tail(m_slack * 2) = 1000000.0 * VectorXd(m_slack * 2).setOnes();
+		m_ci0[c_level].tail(m_slack) = 1000000.0 * VectorXd(m_slack).setOnes();
 
 		
 		// slack matrix for A

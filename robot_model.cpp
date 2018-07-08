@@ -181,19 +181,15 @@ void HQP::robot::RobotModel::MassMatrix() { // for mobile
 }
 void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const VectorXd & qdot) { // for mobile
 	q_rbdl_ = q;
-	qdot_rbdl_ = qdot;
+	if (q(2) < 0.0)
+		q_rbdl_(2) = M_PI * 2 + q(2);
+	
+	qdot_rbdl_ = qdot;	
 	qddot_rbdl_.setZero();
 	UpdateKinematics(*model_, q_rbdl_, qdot_rbdl_, qddot_rbdl_);
 
 	// for mobile
 	m_base_.setIdentity();
-	Matrix3d rot;
-	rot.setIdentity();
-	rot(0, 0) = cos(q(2));
-	rot(0, 1) = -sin(q(2));
-	rot(1, 0) = -sin(q(2));
-	rot(1, 1) = cos(q(2));
-
 	m_base_.rotate(AngleAxisd(q(2), Vector3d::UnitZ()));
 	//m_base_.linear() = rot;
 	m_base_.translation().head(2) = q.head(2);
@@ -206,14 +202,16 @@ void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const Vecto
 	double r = 0.165, b = 0.5, d = 0.05, c = r / (2.0 * b);
 	
 	m_selection_.bottomRightCorner(m_na_ + 2, m_na_ + 2).setIdentity();
-	m_selection_(0, 0) = c*(b*cos(q(2)) - d*sin(q(2)));
-	m_selection_(0, 1) = c*(b*cos(q(2)) + d*sin(q(2)));
-	m_selection_(1, 0) = c*(b*sin(q(2)) + d*cos(q(2)));
-	m_selection_(1, 1) = c*(b*sin(q(2)) - d*cos(q(2)));
+	m_selection_(0, 0) = c*(b*cos(q_rbdl_(2)) - d*sin(q_rbdl_(2)));
+	m_selection_(0, 1) = c*(b*cos(q_rbdl_(2)) + d*sin(q_rbdl_(2)));
+	m_selection_(1, 0) = c*(b*sin(q_rbdl_(2)) + d*cos(q_rbdl_(2)));
+	m_selection_(0, 1) = c*(b*sin(q_rbdl_(2)) - d*cos(q_rbdl_(2)));
+
 	m_selection_(2, 0) = -c;
 	m_selection_(2, 1) = c;
 	m_selection_(3, 0) = 1.0;
 	m_selection_(4, 1) = 1.0;
+	
 }
 void HQP::robot::RobotModel::PointVelocity(const int & frame_id) {
 	p_dot_ = CalcPointVelocity6D(*model_, q_rbdl_, qdot_rbdl_, body_id_[frame_id - 1], com_position_[frame_id - 1]);
