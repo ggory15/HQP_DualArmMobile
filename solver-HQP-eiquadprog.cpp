@@ -38,7 +38,7 @@ void SolverHQuadProg::resize_level(unsigned int level) {
 
 	for (unsigned int i = 0; i <= level; i++) {
 		neq += m_neq[i];
-		nin += m_nin[i] + m_nbound[i];
+		nin += m_nin[i];
 	}
 
 	m_slack = m_neq[level] + m_nin[level];
@@ -65,7 +65,6 @@ void SolverHQuadProg::resize_level(unsigned int level) {
 	x_sol[level].resize(n_variable);
 	x_sol[level].setZero();
 
-	
 }
 void SolverHQuadProg::resize(unsigned int n, unsigned int neq, unsigned int nin, unsigned int nbound) {
 
@@ -82,7 +81,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 		const ConstraintLevel & cl = problemData[i];
 		if (cl.size() > 0) {
 			active_index(i) = 1;
-			const unsigned int n = cl[0].second->cols(); // dof
+			const unsigned int n = cl[0].second->cols(); 
 			for (ConstraintLevel::const_iterator it = cl.begin(); it != cl.end(); it++)
 			{
 				const ConstraintBase* constr = it->second;
@@ -93,10 +92,6 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 					nin += constr->rows();
 				else if (constr->isBound())
 					nbound = constr->lowerBound().size();
-				if (i == 0) {
-					assert(neq == 0 && nin == 0);	// The first Hierachical level must only joint limit!
-					m_n[0] = nbound;
-				}
 			}
 			if (m_neq[level_num] == neq && m_nin[level_num] == nin && m_nbound[level_num] == nbound)
 				m_change[level_num] = false;
@@ -107,6 +102,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 			m_neq[level_num] = neq;
 			m_nin[level_num] = nin;
 			m_nbound[level_num] = nbound;
+			m_n[level_num] = n;
 
 			level_num++;
 		}
@@ -147,7 +143,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 						m_ce0[c_level].segment(i_eq, constr->rows()) = -constr->vector();
 						i_eq += constr->rows();
 						c_eq = constr->rows();
-					}
+					} 
 					else if (constr->isInequality())
 					{
 						m_CI[c_level].block(i_in, 0, constr->rows(), constr->cols()) = -1.0 * constr->matrix();
@@ -158,19 +154,21 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 						i_in += constr->rows();
 						c_in = constr->rows() * 2;
 					}
-					else if (constr->isBound())
-					{
-						m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = -MatrixXd::Identity(m_n[0], m_n[0]);
-						m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
-						i_in += constr->rows();
-						m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = MatrixXd::Identity(m_n[0], m_n[0]);
-						m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
-						i_in += constr->rows();
-						c_in = constr->rows() * 2;
-					}
+					//else if (constr->isBound())
+					//{
+					//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = -MatrixXd::Identity(m_n[0], m_n[0]);
+					//	m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
+					//	i_in += constr->rows();
+					//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = MatrixXd::Identity(m_n[0], m_n[0]);
+					//	m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
+					//	i_in += constr->rows();
+					//	c_in = constr->rows() * 2;
+					//}
+
+					if (c_level >= 2 && cc_level == 2) {		
+						m_ce0[c_level].segment(0, m_neq[c_level-1]) += x_sol[c_level - 1].tail(m_neq[c_level-1]);
+						m_ci0[c_level].segment(24, m_nin[c_level-1]*2) += x_sol[c_level - 1].tail(m_neq[c_level - 1] + m_nin[c_level-1]*2).head(m_nin[c_level-1]*2);
 					
-					if (c_level >= 2 && cc_level == 2) {
-						m_ce0[c_level].segment(0, 6) += x_sol[c_level - 1].segment(m_n[0], 6);
 						// 이전 테스크의 eq 갯수를 받아와서 넣어줘야 함,..
 						//m_ci0[c_level].segment(0, c_in) += x_sol[c_level - 1].segment(7, c_in);
 					} //fix me
@@ -179,16 +177,17 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 			}
 		} // while 
 
-		
-		  // slack variable for lb and ub
+		 // slack variable for lb and ub
+		m_CI[c_level].block(m_CI[c_level].rows() - m_slack * 2 - m_nin[c_level] * 2, m_CI[c_level].cols() - m_slack, m_nin[c_level], m_nin[c_level]) = 1.0 * MatrixXd::Identity(m_nin[c_level], m_nin[c_level]);	
+		m_CI[c_level].block(m_CI[c_level].rows() - m_slack * 2 - m_nin[c_level], m_CI[c_level].cols() - m_slack, m_nin[c_level], m_nin[c_level]) = 1.0 * MatrixXd::Identity(m_nin[c_level], m_nin[c_level]);
 		m_CI[c_level].block(m_CI[c_level].rows() - m_slack * 2, m_CI[c_level].cols() - m_slack, m_slack, m_slack) = -1.0 * MatrixXd::Identity(m_slack, m_slack);
 		m_CI[c_level].bottomRightCorner(m_slack, m_slack) = 1.0 * MatrixXd::Identity(m_slack, m_slack);
+		
 		m_ci0[c_level].tail(m_slack * 2) = 1000000.0 * VectorXd(m_slack * 2).setOnes();
 		m_ci0[c_level].tail(m_slack) = 1000000.0 * VectorXd(m_slack).setOnes();
-
 		
-		// slack matrix for A
-		m_CE[c_level].bottomRightCorner(m_slack, m_slack) = MatrixXd(m_slack, m_slack).setIdentity();
+		// slack variable for Ce
+		m_CE[c_level].bottomRightCorner(m_neq[c_level], m_neq[c_level]) = MatrixXd(m_neq[c_level], m_neq[c_level]).setIdentity();
 
 		//cout << "c" << c_eq + c_in << endl;
 	

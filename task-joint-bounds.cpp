@@ -7,7 +7,7 @@ namespace HQP
 	  using namespace trajectories;
 
 	  TaskJointLimit::TaskJointLimit(const std::string & name, RobotModel & robot) 
-		  : TaskBase(name, robot), m_constraint(name) {
+		  : TaskBase(name, robot), m_constraint(name, robot.nv(), robot.nv()) {
 		  m_robot = robot;
 		  if (robot.type() == 0) {
 			  m_constraint.setLowerBound(-200.0 * VectorXd(robot.nv()).setOnes());
@@ -59,17 +59,20 @@ namespace HQP
 			  }
 			  for (int i = 2; i < m_robot.nv(); i++) {
 				  if (q(i+3) < m_q_lbound(i) + m_buffer) {
-					  m_constraint.lowerBound()(i) = m_Kp(i) * ((m_q_lbound(i) + m_buffer) - q(i+3)) - m_Kd(i) * v(i);
+					  m_constraint.lowerBound()(i) = m_Kp(i) * ((m_q_lbound(i) + m_buffer) - q(i+3)) - m_Kd(i) * v(i+3);
 					  m_constraint.upperBound()(i) = 200.0;
 				  }
 				  else if (q(i+3) > m_q_ubound(i) - m_buffer) {
-					  m_constraint.upperBound()(i) = m_Kp(i) * ((m_q_ubound(i) - m_buffer) - q(i+3)) - m_Kd(i) * v(i);
+					  m_constraint.upperBound()(i) = m_Kp(i) * ((m_q_ubound(i) - m_buffer) - q(i+3)) - m_Kd(i) * v(i+3);
 					  m_constraint.lowerBound()(i) = -200.0;
 				  }
 				  else {
 					  m_constraint.upperBound()(i) = 200.0;
 					  m_constraint.lowerBound()(i) = -200.0;
 				  }
+				  MatrixXd A(m_robot.nv(), m_robot.nv());
+				  A.setIdentity();
+				  m_constraint.setMatrix(A);
 			  }
 			  return m_constraint;
 		  }

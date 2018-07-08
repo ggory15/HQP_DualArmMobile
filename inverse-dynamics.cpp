@@ -5,11 +5,16 @@ using namespace HQP;
 using namespace constraint;
 using namespace tasks;
 using namespace solver;
+using namespace contact;
+using namespace std;
 
 TaskLevel::TaskLevel(tasks::TaskBase & task,
 	unsigned int priority) :
 	task(task),
 	priority(priority)
+{}
+ContactLevel::ContactLevel(contact::ContactBase & contact) :
+	contact(contact)
 {}
 
 InverseDynamics::InverseDynamics(RobotModel & robot, bool verbose)
@@ -28,6 +33,7 @@ InverseDynamics::InverseDynamics(RobotModel & robot, bool verbose)
 	m_in = 0;
 	m_bound = 0;
 	m_hqpData.resize(5);
+	m_Jc.setZero(m_k, m_v);
 	//m_Jc.setZero(m_k, m_v);
 	//m_hqpData[0].push_back(make_pair<double, ConstraintBase*>(1.0, &m_baseDynamics));
 }	
@@ -52,8 +58,8 @@ unsigned int InverseDynamics::nBound() const
 }
 void InverseDynamics::resizeHqpData()
 {
-	//m_Jc.setZero(m_k, m_v);
-	m_baseDynamics.resize(6, m_v + m_k);
+	m_Jc.setZero(m_k, m_v);
+	//m_baseDynamics.resize(6, m_v + m_k);
 	for (HQPData::iterator it = m_hqpData.begin(); it != m_hqpData.end(); it++)
 	{
 		for (ConstraintLevel::iterator itt = it->begin(); itt != it->end(); itt++)
@@ -171,6 +177,30 @@ bool InverseDynamics::addOperationalTask(TaskSE3Equality & task, double weight, 
 
 	return true;
 }
+bool InverseDynamics::addRigidContact(ContactBase & contact, unsigned int priorityLevel) {
+	ContactLevel *cl = new ContactLevel(contact);
+	cl->index = m_k;
+	m_k += contact.n_force();
+	m_contacts.push_back(cl);
+	resizeHqpData();
+	/*const ConstraintBase & motionConstr = contact.getMotionConstraint();
+	cl->motionConstraint = new ConstraintEquality(contact.name(), motionConstr.rows(), m_v + m_k);
+	m_hqpData[priorityLevel].push_back(make_pair<double, ConstraintBase*>(1.0, cl->motionConstraint));*/
+
+	const ConstraintInequality & forceConstr = contact.getForceConstraint();
+	cl->forceConstraint = new ConstraintInequality(contact.name(), forceConstr.rows(), m_v + m_k);
+	m_hqpData[priorityLevel].push_back(make_pair<double, ConstraintBase*>(1.0, cl->forceConstraint));
+
+	//const ConstraintEquality & forceRegConstr = contact.getForceRegularizationTask();
+	//cl->forceRegTask = new ConstraintEquality(contact.name(), forceRegConstr.rows(), m_v + m_k);
+	//m_hqpData[priorityLevel+1].push_back(make_pair<double, ConstraintBase*>(
+	//	contact.getForceRegularizationWeight(), cl->forceRegTask));
+
+	//m_eq += motionConstr.rows();
+	m_in += forceConstr.rows();
+
+	return true;
+}
 
 bool InverseDynamics::updateTaskWeight(const std::string & task_name,
 	double weight)
@@ -225,6 +255,23 @@ const HQPData & InverseDynamics::computeProblemData(double time, VectorXd q, Vec
 		}
 	}
 	else if (m_robot.type() == 1) {
+		for (std::vector<ContactLevel*>::iterator it = m_contacts.begin(); it != m_contacts.end(); it++)
+		{
+			ContactLevel* cl = *it;
+			unsigned int m = cl->contact.n_force();
+
+			//const ConstraintBase & mc = cl->contact.computeMotionTask(time, q, v);
+			//cl->motionConstraint->matrix().leftCols(m_v) = mc.matrix();
+			//cl->motionConstraint->vector() = mc.vector();
+
+			m_Jc.middleRows(cl->index, m).noalias() =m_robot.getJacobian(7).topRows(3); // Force control of end-effector is only Fx, Fy, Fz in this time
+
+			const ConstraintInequality & fc = cl->contact.computeForceTask(time, q, v);
+			cl->forceConstraint->matrix().middleCols(m_v + cl->index, m) = fc.matrix();
+			cl->forceConstraint->lowerBound() = fc.lowerBound();
+			cl->forceConstraint->upperBound() = fc.upperBound();
+		}
+
 		std::vector<TaskLevel*>::iterator it;
 		for (it = m_taskMotions.begin(); it != m_taskMotions.end(); it++)
 		{
@@ -275,10 +322,16 @@ bool InverseDynamics::decodeSolution(const HQPOutput & sol)
 		m_tau.resize(m_v - 2);
 		const MatrixXd & M_a = m_robot.getMassMatrix().bottomRows(m_v - 2);
 		const VectorXd & h_a = m_robot.getNLEtorque().tail(m_v-2);
+		const MatrixXd & J_a = m_Jc.topRows(m_k);
 		m_dv = sol.x.head(m_v);
-
+		m_f = sol.x.segment(m_v, m_k);
 		m_tau = h_a;
-		m_tau.noalias() += M_a * sol.x.head(m_v);
+		m_tau.noalias() += M_a * m_dv;
+		
+		VectorXd torque_force = J_a.transpose() * m_f;
+		if (m_k > 0)
+			m_tau.noalias() -= torque_force.head(m_v - 2);
+
 
 		m_solutionDecoded = true;
 
@@ -300,6 +353,11 @@ const VectorXd & InverseDynamics::getActuatorForces(const HQPOutput & sol)
 {
 	decodeSolution(sol);
 	return m_tau;
+}
+const VectorXd & InverseDynamics::getContactForces(const HQPOutput & sol)
+{
+	decodeSolution(sol);
+	return m_f;
 }
 
 const VectorXd & InverseDynamics::getAccelerations(const HQPOutput & sol)

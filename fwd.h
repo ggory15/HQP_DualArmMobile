@@ -14,5 +14,8 @@ typedef Ref<Matrix2d>   Ref_matrix2d;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, RowMajor> MatrixRowMajor;
 typedef Transform<double, 3, Eigen::Affine> Transform3d;
 
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
+typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Matrix3Xd;
+
 typedef std::size_t Index;
 typedef Eigen::Matrix<double, 6, Eigen::Dynamic> Matrix6x;

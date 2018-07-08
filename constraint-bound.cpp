@@ -37,8 +37,8 @@ unsigned int ConstraintBound::cols() const
 
 void ConstraintBound::resize(const unsigned int r, const unsigned int c)
 {
-	assert(r == c);
-	m_A.setIdentity(r, c);
+	//assert(r == c);
+	m_A.setZero(r, c);
 	m_lb.setZero(r);
 	m_ub.setZero(r);
 }
