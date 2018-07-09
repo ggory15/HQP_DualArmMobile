@@ -13,8 +13,12 @@
 #include "task-joint-posture.h"
 #include "task-operational.h"
 #include "task-joint-bounds.h"
+#include "task-mobile.h"
 // for solvers
 #include "solver-HQP-qpoases.h"
+// for contact
+#include "contact-3d.h"
+#include "contact-base.h"
 
 #include <string>
 #include <vector>
@@ -33,17 +37,19 @@ namespace HQP {
 
 		 TaskLevel(tasks::TaskBase & task, unsigned int priority);
 	};
-	//class ContactTransitionInfo
-	//{
-	//public:
-	//	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	class ContactLevel
+	{
+	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	//	double time_start;
-	//	double time_end;
-	//	double fMax_start;  /// max normal force at time time_start
-	//	double fMax_end;    /// max normal force at time time_end
-	//	//ContactLevel * contactLevel;
-	//};
+		contact::ContactBase & contact;
+		constraint::ConstraintBase * motionConstraint;
+		constraint::ConstraintInequality * forceConstraint;
+		constraint::ConstraintEquality * forceRegTask;
+		unsigned int index; /// index of 1st element of associated force variable in the force vector
+
+		ContactLevel(contact::ContactBase & contact);
+	};
 
 	class InverseDynamics {
 	public:
@@ -59,6 +65,7 @@ namespace HQP {
 		//typedef tasks::TaskActuation TaskActuation;
 		typedef solver::HQPOutput HQPOutput;
 		typedef solver::HQPData HQPData;
+		typedef contact::ContactBase ContactBase;
 
 		InverseDynamics(RobotModel & robot, bool verbose = false);
 		~InverseDynamics() {}
@@ -72,12 +79,15 @@ namespace HQP {
 		bool addJointPostureTask(TaskJointPosture & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addJointLimitTask(TaskJointLimit & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addOperationalTask(TaskSE3Equality & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
+		bool addRigidContact(ContactBase & contact, unsigned int priorityLevel);
+
 
 		bool updateTaskWeight(const std::string & task_name, double weight);
 		bool removeTask(const std::string & taskName, double transition_duration = 0.0);
 		const HQPData & computeProblemData(double time,  VectorXd q, VectorXd v);
 
 		const VectorXd & getActuatorForces(const HQPOutput & sol);
+		const VectorXd & getContactForces(const HQPOutput & sol);
 		const VectorXd & getAccelerations(const HQPOutput & sol);
 		const VectorXd & getSlack(const HQPOutput & sol);
 		HQPData & getHQPData() { return m_hqpData; };
@@ -95,13 +105,15 @@ namespace HQP {
 		solver::Solver_HQP_qpoases m_solver;
 		HQPOutput m_sol;
 		std::vector<TaskLevel*>     m_taskMotions;
+		std::vector<ContactLevel*>   m_contacts;
+
 		double m_t;         /// time
 		unsigned int m_k;   /// number of contact-force variables
 		unsigned int m_v;   /// number of acceleration variables
 		unsigned int m_eq;  /// number of equality constraints
 		unsigned int m_in;  /// number of inequality constraints
 		unsigned int m_bound;
-		//MatrixXd m_Jc;        /// contact force Jacobian
+		MatrixXd m_Jc;        /// contact force Jacobian
 		constraint::ConstraintEquality m_baseDynamics;
 
 		bool m_solutionDecoded;

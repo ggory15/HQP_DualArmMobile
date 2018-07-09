@@ -3,8 +3,9 @@
 
 #include "robot_model.h"
 #include "task-base.h"
+#include "task-motion.h"
 #include "trajectory-base.h"
-#include "constraint-bound.h"
+#include "constraint-inequality.h"
 
 namespace HQP
 {
@@ -15,7 +16,7 @@ namespace HQP
 	  public:
 		  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-		  typedef constraint::ConstraintBound ConstraintBound;
+		  typedef constraint::ConstraintInequality ConstraintInequality;
 		  typedef robot::RobotModel RobotModel;
 		  typedef constraint::ConstraintBase ConstraintBase;
 
@@ -47,7 +48,7 @@ namespace HQP
 		  
 		  double m_buffer;
 		  VectorXd m_q_lbound, m_q_ubound;
-		  ConstraintBound m_constraint;
+		  ConstraintInequality m_constraint;
 	  };
   }
 }

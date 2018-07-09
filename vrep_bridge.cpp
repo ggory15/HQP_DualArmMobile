@@ -1,5 +1,6 @@
 #include "vrep_bridge.h"
 using namespace std;
+using namespace Eigen;
 
 void VRepBridge::simxErrorCheck(simxInt error)
 {
@@ -51,6 +52,8 @@ void VRepBridge::dataInit()
 	target_x_.setZero();	
 	desired_torque_.resize(MOTORNUM);
 	desired_torque_.setZero();
+	current_base_vel_.resize(4);
+	desired_base_vel_.resize(4);
 
 	force_.setZero();
 	desired_obs_pos.setZero();
@@ -90,6 +93,9 @@ void VRepBridge::write()
 		simxSetJointTargetVelocity(clientID_, motorHandle_[i], velLimit, simx_opmode_streaming);
 		simxSetJointForce(clientID_, motorHandle_[i], static_cast<float>(abs(desired_torque_(i))), simx_opmode_streaming);
 	}
+	
+	for (size_t i = 0; i < 4; i++)
+		simxSetJointTargetVelocity(clientID_, baseHandle_[i], desired_base_vel_(i), simx_opmode_streaming);
 }
 void VRepBridge::read()
 {
@@ -102,6 +108,27 @@ void VRepBridge::read()
 		simxGetObjectFloatParameter(clientID_, motorHandle_[i], 2012, &data, simx_opmode_streaming);
 		current_qdot_(i) = data;
 	}
+	for (size_t i = 0; i < 4; i++)
+	{
+		simxFloat data;
+		simxGetObjectFloatParameter(clientID_, baseHandle_[i], 2012, &data, simx_opmode_streaming);
+		current_base_vel_(i) = data;
+	}
+
+	simxFloat data[3];
+	simxGetObjectPosition(clientID_, StateEstimator_, -1, data, simx_opmode_streaming);
+	H_transform_.translation() << data[0], data[1], data[2];
+	simxGetObjectOrientation(clientID_, StateEstimator_, -1, data, simx_opmode_streaming);
+	euler_ << data[0], data[1], data[2];
+	
+	Matrix3d rot;
+	rot = Eigen::AngleAxisd(data[2], Vector3d::UnitZ()) *Eigen::AngleAxisd(data[1], Vector3d::UnitY()) * Eigen::AngleAxisd(data[0], Vector3d::UnitX());
+	H_transform_.linear() = rot;
+
+	simxFloat data2[3];
+	simxGetObjectVelocity(clientID_, StateEstimator_, data, data2, simx_opmode_streaming);
+	H_vel_.linear() << data[0], data[1], data[2];
+	H_vel_.angular() << data2[0], data2[1], data2[2];
 }
 
 
@@ -115,7 +142,22 @@ void VRepBridge::getHandle()
 	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint4", &motorHandle_[3], simx_opmode_oneshot_wait));
 	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint5", &motorHandle_[4], simx_opmode_oneshot_wait));
 	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint6", &motorHandle_[5], simx_opmode_oneshot_wait));
-	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint7", &motorHandle_[6], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint7", &motorHandle_[6], simx_opmode_oneshot_wait)); // Left Arm
+
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint8", &motorHandle_[7], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint9", &motorHandle_[8], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint10", &motorHandle_[9], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint11", &motorHandle_[10], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint12", &motorHandle_[11], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint13", &motorHandle_[12], simx_opmode_oneshot_wait)); 
+	simxErrorCheck(simxGetObjectHandle(clientID_, "panda_joint14", &motorHandle_[13], simx_opmode_oneshot_wait)); // Right Arm
+
+	simxErrorCheck(simxGetObjectHandle(clientID_, "joint_1", &baseHandle_[0], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "joint_2", &baseHandle_[1], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "joint_3", &baseHandle_[2], simx_opmode_oneshot_wait));
+	simxErrorCheck(simxGetObjectHandle(clientID_, "joint_4", &baseHandle_[3], simx_opmode_oneshot_wait));
+
+	simxErrorCheck(simxGetObjectHandle(clientID_, "Dummy", &StateEstimator_, simx_opmode_oneshot_wait));
 
 	cout << "[INFO] The handle has been imported." << endl;
 }

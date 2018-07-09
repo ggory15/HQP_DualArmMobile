@@ -2,6 +2,8 @@
 #define __ROBOT_MODEL__
 
 #include <rbdl/rbdl.h>
+#include <rbdl/rbdl_config.h>
+//#include <rbdl/rbdl.h>
 #include "motion.h"
 #include "fwd.h"
 
@@ -30,7 +32,7 @@ namespace HQP {
 				Jacobian(frame_id);
 				return m_J_; 
 			}
-			const VectorXd & getPosition(const int & frame_id) { 
+			const Vector3d & getPosition(const int & frame_id) { 
 				Position(frame_id);
 				return m_pos_;
 			}
@@ -66,7 +68,21 @@ namespace HQP {
 				PointVelocity(frame_id);
 				return m_p_dot_;
 			}
-		
+			const VectorXd & getRealJointPosition() {
+				q_real_.tail(m_nv_) = q_rbdl_.tail(m_nv_);
+				return q_real_;
+			}
+			const VectorXd & getRealJointVelocity() {
+				qdot_real_.tail(m_nv_) = qdot_rbdl_.tail(m_nv_);
+				return qdot_real_;
+			}
+			const Transform3d & getMobileTransformation() {
+				return m_base_;
+			}
+			const MotionVector<double> & getMobileVelocity() {
+				return m_mobile_dot_;
+			}
+
 		private:			
 			void Jacobian(const int & frame_id);
 			void Position(const int & frame_id);
@@ -79,10 +95,17 @@ namespace HQP {
 
 			Model* model_;
 			Body body_[dof];
-			Joint joint_[dof];
+			Body virtual_body_[6];
+			Body base_;
 
+			Joint joint_[dof];
+			Joint virtual_joint_[6];
+		
 			VectorXd q_;
 			VectorXd qdot_;
+
+			VectorXd q_real_;
+			VectorXd qdot_real_;
 			
 			double mass_[dof];
 			Math::Vector3d axis_[dof];
@@ -98,6 +121,8 @@ namespace HQP {
 			Math::VectorNd tau_;
 
 			unsigned int body_id_[dof];		
+			unsigned int base_id_; // virtual joint
+			unsigned int virtual_body_id_[6];
 
 			MatrixXd m_Mass_mat_;
 			VectorXd m_NLE_;
@@ -105,8 +130,12 @@ namespace HQP {
 			Matrix3d m_Ori_;
 			MatrixXd m_J_;
 			MotionVector<double> m_p_dot_;
+			MotionVector<double> m_mobile_dot_;
+			MatrixXd m_selection_;
+			MatrixXd m_selection_dot_, m_Mass_virtual_mat_;
 
 			Transform3d m_Trans_;
+			Transform3d m_base_;
 
 			Type m_robot_type_;
 

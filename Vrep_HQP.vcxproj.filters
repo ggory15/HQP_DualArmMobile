@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{20e3c692-9ab4-4866-8631-0c8c8ca3d628}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP">
+      <UniqueIdentifier>{694db1d8-c814-485c-ae9e-446d2b841459}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP">
+      <UniqueIdentifier>{b97daef0-10b7-41b7-ae27-0d34c3831753}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\tasks">
+      <UniqueIdentifier>{e7465b39-0bfe-4111-97e3-e6904f6f23fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\trajectories">
+      <UniqueIdentifier>{a6c8a6c5-f35b-4cf5-a7c8-43b908a5e1ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\constraints">
+      <UniqueIdentifier>{571613a6-dafc-46f7-a6f8-856bf5a7de32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\solver">
+      <UniqueIdentifier>{488408bc-50b0-4b6e-9145-5d953ded637c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\constraints">
+      <UniqueIdentifier>{9976e701-99e1-4d3c-a465-f678ac58e4cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\solver">
+      <UniqueIdentifier>{94f1ffab-26c1-4792-9109-a352418125c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\trajectories">
+      <UniqueIdentifier>{fd37f6d6-0f67-49fa-b1f6-d50b5c7d3f83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\tasks">
+      <UniqueIdentifier>{4eab83dd-bf77-4287-88c1-590d3cb24592}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\robot">
+      <UniqueIdentifier>{cceb3a8d-3a2f-4c3d-9a8c-9fbb8753ce71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\robot">
+      <UniqueIdentifier>{d5503006-6ea6-468b-bf6d-0315306f0f8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\math">
+      <UniqueIdentifier>{5e409b10-41e0-49c9-a5f2-d9b60de32b00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\math">
+      <UniqueIdentifier>{2d8b19cc-c6be-444f-b82a-91810c8f9c4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\HQP\contacts">
+      <UniqueIdentifier>{d8bb1212-ceb9-4a19-9334-97e8a2ece7c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\HQP\contacts">
+      <UniqueIdentifier>{f99af804-ae59-4c0b-b505-7de73b16a784}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\Program Files\V-REP3\V-REP_PRO_EDU\programming\remoteApi\extApiPlatform.c">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\Program Files\V-REP3\V-REP_PRO_EDU\programming\remoteApi\extApi.c">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="vrep_bridge.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="inverse-dynamics.cpp">
+      <Filter>소스 파일\HQP</Filter>
+    </ClCompile>
+    <ClCompile Include="robot_model.cpp">
+      <Filter>소스 파일\HQP\robot</Filter>
+    </ClCompile>
+    <ClCompile Include="constraint-base.cpp">
+      <Filter>소스 파일\HQP\constraints</Filter>
+    </ClCompile>
+    <ClCompile Include="constraint-bound.cpp">
+      <Filter>소스 파일\HQP\constraints</Filter>
+    </ClCompile>
+    <ClCompile Include="constraint-equality.cpp">
+      <Filter>소스 파일\HQP\constraints</Filter>
+    </ClCompile>
+    <ClCompile Include="constraint-inequality.cpp">
+      <Filter>소스 파일\HQP\constraints</Filter>
+    </ClCompile>
+    <ClCompile Include="trajectory-jointspace.cpp">
+      <Filter>소스 파일\HQP\trajectories</Filter>
+    </ClCompile>
+    <ClCompile Include="trajectory-operationalspace.cpp">
+      <Filter>소스 파일\HQP\trajectories</Filter>
+    </ClCompile>
+    <ClCompile Include="task-base.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="task-com.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="task-joint-bounds.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="task-joint-posture.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="task-motion.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="task-operational.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="solver-HQP-base.cpp">
+      <Filter>소스 파일\HQP\solver</Filter>
+    </ClCompile>
+    <ClCompile Include="solver-HQP-factory.cpp">
+      <Filter>소스 파일\HQP\solver</Filter>
+    </ClCompile>
+    <ClCompile Include="solver-HQP-qpoases.cpp">
+      <Filter>소스 파일\HQP\solver</Filter>
+    </ClCompile>
+    <ClCompile Include="solver-utils.cpp">
+      <Filter>소스 파일\HQP\solver</Filter>
+    </ClCompile>
+    <ClCompile Include="solver-HQP-eiquadprog.cpp">
+      <Filter>소스 파일\HQP\solver</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>소스 파일\HQP\math</Filter>
+    </ClCompile>
+    <ClCompile Include="task-mobile.cpp">
+      <Filter>소스 파일\HQP\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="contact-base.cpp">
+      <Filter>소스 파일\HQP\contacts</Filter>
+    </ClCompile>
+    <ClCompile Include="contact-3d.cpp">
+      <Filter>소스 파일\HQP\contacts</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\Program Files\V-REP3\V-REP_PRO_EDU\programming\remoteApi\extApiPlatform.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\Program Files\V-REP3\V-REP_PRO_EDU\programming\remoteApi\extApi.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\Program Files\V-REP3\V-REP_PRO_EDU\programming\remoteApi\extApiInternal.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="vrep_bridge.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="fwd.h">
+      <Filter>헤더 파일\HQP</Filter>
+    </ClInclude>
+    <ClInclude Include="Inverse-dynamics.h">
+      <Filter>헤더 파일\HQP</Filter>
+    </ClInclude>
+    <ClInclude Include="robot_model.h">
+      <Filter>헤더 파일\HQP\robot</Filter>
+    </ClInclude>
+    <ClInclude Include="constraint-base.h">
+      <Filter>헤더 파일\HQP\constraints</Filter>
+    </ClInclude>
+    <ClInclude Include="fwd_constraints.h">
+      <Filter>헤더 파일\HQP\constraints</Filter>
+    </ClInclude>
+    <ClInclude Include="constraint-equality.h">
+      <Filter>헤더 파일\HQP\constraints</Filter>
+    </ClInclude>
+    <ClInclude Include="constraint-inequality.h">
+      <Filter>헤더 파일\HQP\constraints</Filter>
+    </ClInclude>
+    <ClInclude Include="constraint-bound.h">
+      <Filter>헤더 파일\HQP\constraints</Filter>
+    </ClInclude>
+    <ClInclude Include="trajectory-base.h">
+      <Filter>헤더 파일\HQP\trajectories</Filter>
+    </ClInclude>
+    <ClInclude Include="trajectory-jointspace.h">
+      <Filter>헤더 파일\HQP\trajectories</Filter>
+    </ClInclude>
+    <ClInclude Include="trajectory-operationalspace.h">
+      <Filter>헤더 파일\HQP\trajectories</Filter>
+    </ClInclude>
+    <ClInclude Include="task-com.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="task-joint-bounds.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="task-joint-posture.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="task-motion.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="task-operational.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="task-base.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="motion.h">
+      <Filter>헤더 파일\HQP\math</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>헤더 파일\HQP\math</Filter>
+    </ClInclude>
+    <ClInclude Include="fwd_solver.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="container.h">
+      <Filter>헤더 파일\HQP\math</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-base.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-factory.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-factory.hxx">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-output.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-qpoases.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-utils.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="solver-HQP-eiquadprog.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="eiquadprog_2011.h">
+      <Filter>헤더 파일\HQP\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="task-mobile.h">
+      <Filter>헤더 파일\HQP\tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="contact-base.h">
+      <Filter>헤더 파일\HQP\contacts</Filter>
+    </ClInclude>
+    <ClInclude Include="contact-3d.h">
+      <Filter>헤더 파일\HQP\contacts</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

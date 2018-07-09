@@ -18,11 +18,11 @@ namespace HQP
 			mask(m);
 		}
 		else if (robot.type() == 1) {
-			m_ref.resize(robot.nv()-3);
-			m_constraint.setMatrix(Eigen::MatrixXd(robot.nv()-3, robot.nv()).setZero());
-			m_Kp.setZero(robot.nv()-3);
-			m_Kd.setZero(robot.nv()-3);
-			VectorXd m = VectorXd::Ones(robot.nv()-3);
+			m_ref.resize(robot.nv()-2);
+			m_constraint.setMatrix(Eigen::MatrixXd(robot.nv()-2, robot.nv()).setZero());
+			m_Kp.setZero(robot.nv()-2);
+			m_Kd.setZero(robot.nv()-2);
+			VectorXd m = VectorXd::Ones(robot.nv()-2);
 			mask(m);
 		}
 		else if (robot.type() == 2) {
@@ -54,6 +54,24 @@ namespace HQP
 				{
 					assert(m(i) == 1.0);
 					S(j, i) = 1.0;
+					m_activeAxes(j) = i;
+					j++;
+				}
+			m_constraint.resize((unsigned int)dim, m_robot.nv());
+			m_constraint.setMatrix(S);
+		}
+		if (m_robot.type() == 1) {
+			assert(m.size() == m_robot.nv() - 2);
+			m_mask = m;
+			const VectorXi::Index dim = static_cast<VectorXi::Index>(m.sum());
+			MatrixXd S = MatrixXd::Zero(dim, m_robot.nv());
+			m_activeAxes.resize(dim);
+			unsigned int j = 0;
+			for (unsigned int i = 0; i < m.size(); i++)
+				if (m(i) != 0.0)
+				{
+					assert(m(i) == 1.0);
+					S(j, 2 + i) = 1.0;
 					m_activeAxes(j) = i;
 					j++;
 				}
@@ -146,6 +164,21 @@ namespace HQP
 		if (m_robot.type() == 0) {
 			m_p = q.tail(m_robot.nv());
 			m_v = v.tail(m_robot.nv());
+
+			m_p_error = m_p - m_ref.pos;
+			m_v_error = m_v - m_ref.vel;
+
+			m_a_des = -m_Kp.cwiseProduct(m_p_error)
+				- m_Kd.cwiseProduct(m_v_error)
+				+ m_ref.acc;
+
+			for (unsigned int i = 0; i < m_activeAxes.size(); i++)
+				m_constraint.vector()(i) = m_a_des(m_activeAxes(i));
+			return m_constraint;
+		}
+		else if (m_robot.type() == 1) {
+			m_p = q.tail(m_robot.nv() - 2);
+			m_v = v.tail(m_robot.nv() - 2);
 
 			m_p_error = m_p - m_ref.pos;
 			m_v_error = m_v - m_ref.vel;
