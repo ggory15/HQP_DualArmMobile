@@ -105,7 +105,7 @@ int main()
 
 	invdyn_->addJointLimitTask(*jointLimitTask, w_jointlimit, 0, 0.0);
 
-	qdes = 30.0 / 180.0 * 3.14*VectorXd(dof).setZero();
+	qdes = 20.0 / 180.0 * 3.14*VectorXd(dof).setOnes();
 	qdes.setZero();
 	//qdes(1) = 30.0 * M_PI / 180.0;
 	qdes(3) = -70.0 * M_PI/180.0;
@@ -114,18 +114,18 @@ int main()
 	//qdes(5) = -90.0 * M_PI / 180.0;
 	
 	postureTask = new tasks::TaskJointPosture("joint_control_task", *robot_);
-	double kp_posture = 300.0, w_posture = 1.00;
+	double kp_posture = 100.0, w_posture = 1.00;
 	postureTask->Kp(kp_posture*VectorXd::Ones(robot_->nv()-2));
 	postureTask->Kd(2.0*postureTask->Kp().cwiseSqrt());
-	//invdyn_->addJointPostureTask(*postureTask, 1.0, 2, 0.0);
+	invdyn_->addJointPostureTask(*postureTask, 0.001, 2, 0.0);
 
 	moveTask = new tasks::TaskOperationalSpace("end_effector_task", *robot_, 7);
-	double kp_move = 100.0, w_move = 1.0;
+	double kp_move = 300.0, w_move = 1.0;
 	moveTask->Kp(kp_move*VectorXd::Ones(6));
 	moveTask->Kd(2.0*moveTask->Kp().cwiseSqrt());
 
 	mobileTask = new tasks::TaskMobile("mobile_task", *robot_);
-	double kp_mobile = 300.0, w_mobile = 1.0;
+	double kp_mobile = 100.0, w_mobile = 1.0;
 	mobileTask->Kp(kp_mobile*VectorXd::Ones(6));
 	mobileTask->Kd(2.0*mobileTask->Kp().cwiseSqrt());
 	mobileTask->setOnlyOriCTRL(false);
@@ -215,6 +215,7 @@ int main()
 				if (time == 1.0 / Hz) {
 					T_endeffector = robot_->getTransformation(7);
 					T_endeffector.translation()(2) -= 0.13;
+					T_endeffector.translation()(1) -= 0.13;
 		
 					trajEE->setReference(T_endeffector);
 					s = trajEE->computeNext();
@@ -223,17 +224,14 @@ int main()
 					bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);	
 					
 					T_mobile = robot_->getMobileTransformation();
-					T_mobile.setIdentity();
-					T_mobile.translation()(0) -= 0.0;
-					T_mobile.translation()(1) -= 0.0;
-					T_mobile.rotate(AngleAxisd(0.0, Vector3d::UnitZ()));
 					trajmobile->setReference(T_mobile);
 					s_mobile = trajmobile->computeNext();
 					mobileTask->setReference(s_mobile);
 					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);
 				}
 				if (time == 0.5 ) {
-					invdyn_->removeTask("end_effector_task");
+				//	invdyn_->removeTask("end_effector_task");
+					cout << "remove task" << endl;
 				}
 
 			//	
@@ -248,6 +246,8 @@ int main()
 
 				if (time == 1 / Hz)
 					cout << solver::HQPDataToString(HQPData, true) << endl;
+
+				cout << vb.current_q_.head(7).transpose() << endl;
 			//	if (time == 1) {
 			//		invdyn_->removeTask("end_effector_task");
 

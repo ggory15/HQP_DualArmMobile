@@ -328,7 +328,7 @@ bool InverseDynamics::decodeSolution(const HQPOutput & sol)
 		m_f = sol.x.segment(m_v, m_k);
 		m_tau = h_a;
 	
-		m_tau.noalias() += M_a * m_dv;
+		m_tau.noalias() += M_a * m_dv -0.15 * m_robot.getRealJointVelocity().tail(m_v - 2);
 
 		VectorXd torque_force = J_a.transpose() * m_f;
 		if (m_k > 0)
