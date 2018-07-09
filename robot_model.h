@@ -132,7 +132,7 @@ namespace HQP {
 			MotionVector<double> m_p_dot_;
 			MotionVector<double> m_mobile_dot_;
 			MatrixXd m_selection_;
-			MatrixXd m_selection_dot_;
+			MatrixXd m_selection_dot_, m_Mass_virtual_mat_;
 
 			Transform3d m_Trans_;
 			Transform3d m_base_;

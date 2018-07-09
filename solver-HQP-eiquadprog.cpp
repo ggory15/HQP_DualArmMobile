@@ -74,7 +74,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 {
 	VectorXi active_index(max_level);
 	active_index.setZero();
-
+	
 	int level_num = 0;
 	for (int i = 0; i < max_level; i++) {
 		unsigned int neq = 0, nin = 0, nbound = 0;
@@ -108,74 +108,87 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 		}
 	}
 
+	//assert(level_num == 2, "task number must be more than 2");
+
+	HQPData newHQPDdata;
+	//newHQPDdata.resize(level_num - 1);
+
 	for (int i = 0; i < max_level; i++)
+		if (active_index(i) == 1) {
+			newHQPDdata.push_back(problemData[i]);
+		}
+
+	for (int i = 0; i < level_num-1; i++)
 		x_sol[i].setZero();
 
 	unsigned int c_level = 1;
-	for (int i = 0; i < max_level; i++) {
+	for (int i = 0; i < level_num-1; i++) {
 		if (m_change[c_level]) {
 			resize_level(c_level);
 		}
 		resize_level(c_level);
 		int i_eq = 0, i_in = 0, i_bound = 0, cc_level = 0;
 		int c_eq = 0, c_in = 0;
+
 		if (c_level == level_num)
 			break;
 
 		while (cc_level <= c_level) {
-			if (active_index(cc_level) == 1) {
-				//cout << "m_H" << m_H[c_level].transpose() << endl;
-				//cout << "m_g" << m_g[c_level].transpose() << endl;
-				//cout << "m_CI" << m_CI[c_level] << endl;
-				//cout << "m_ci0" << m_ci0[c_level].transpose() << endl;
-				//cout << "m_CE" << m_CE[c_level] << endl;
-				//cout << "m_ce0" << m_ce0[c_level].transpose() << endl;
-				//getchar();
+			//cout << "m_H" << m_H[c_level].transpose() << endl;
+			//cout << "m_g" << m_g[c_level].transpose() << endl;
+			//cout << "m_CI" << m_CI[c_level] << endl;
+			//cout << "m_ci0" << m_ci0[c_level].transpose() << endl;
+			//cout << "m_CE" << m_CE[c_level] << endl;
+			//cout << "m_ce0" << m_ce0[c_level].transpose() << endl;
+			//getchar();
 
-				const ConstraintLevel & cl = problemData[cc_level];
-				for (ConstraintLevel::const_iterator it = cl.begin(); it != cl.end(); it++)
+			const ConstraintLevel & cl = newHQPDdata[cc_level];
+			assert(cl.size() > 0);
+			for (ConstraintLevel::const_iterator it = cl.begin(); it != cl.end(); it++)
+			{
+				c_eq = 0; c_in = 0;
+				const ConstraintBase* constr = it->second;
+				if (constr->isEquality())
 				{
-					c_eq = 0; c_in = 0;
-					const ConstraintBase* constr = it->second;
-					if (constr->isEquality())
-					{
-						m_CE[c_level].block(i_eq, 0, constr->rows(), constr->cols()) = constr->matrix();
-						m_ce0[c_level].segment(i_eq, constr->rows()) = -constr->vector();
-						i_eq += constr->rows();
-						c_eq = constr->rows();
-					} 
-					else if (constr->isInequality())
-					{
-						m_CI[c_level].block(i_in, 0, constr->rows(), constr->cols()) = -1.0 * constr->matrix();
-						m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
-						i_in += constr->rows();
-						m_CI[c_level].block(i_in, 0, constr->rows(), constr->cols()) = constr->matrix();
-						m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
-						i_in += constr->rows();
-						c_in = constr->rows() * 2;
-					}
-					//else if (constr->isBound())
-					//{
-					//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = -MatrixXd::Identity(m_n[0], m_n[0]);
-					//	m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
-					//	i_in += constr->rows();
-					//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = MatrixXd::Identity(m_n[0], m_n[0]);
-					//	m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
-					//	i_in += constr->rows();
-					//	c_in = constr->rows() * 2;
-					//}
-
-					if (c_level >= 2 && cc_level == 2) {		
-						m_ce0[c_level].segment(0, m_neq[c_level-1]) += x_sol[c_level - 1].tail(m_neq[c_level-1]);
-						m_ci0[c_level].segment(24, m_nin[c_level-1]*2) += x_sol[c_level - 1].tail(m_neq[c_level - 1] + m_nin[c_level-1]*2).head(m_nin[c_level-1]*2);
-					
-						// 이전 테스크의 eq 갯수를 받아와서 넣어줘야 함,..
-						//m_ci0[c_level].segment(0, c_in) += x_sol[c_level - 1].segment(7, c_in);
-					} //fix me
+					m_CE[c_level].block(i_eq, 0, constr->rows(), constr->cols()) = constr->matrix();
+					m_ce0[c_level].segment(i_eq, constr->rows()) = -constr->vector();
+					i_eq += constr->rows();
+					c_eq = constr->rows();
+				} 
+				else if (constr->isInequality())
+				{
+					m_CI[c_level].block(i_in, 0, constr->rows(), constr->cols()) = -1.0 * constr->matrix();
+					m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
+					i_in += constr->rows();
+					m_CI[c_level].block(i_in, 0, constr->rows(), constr->cols()) = constr->matrix();
+					m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
+					i_in += constr->rows();
+					c_in = constr->rows() * 2;
 				}
-				cc_level++;
+				//else if (constr->isBound())
+				//{
+				//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = -MatrixXd::Identity(m_n[0], m_n[0]);
+				//	m_ci0[c_level].segment(i_in, constr->rows()) = constr->upperBound();
+				//	i_in += constr->rows();
+				//	m_CI[c_level].block(i_in, 0, constr->rows(), constr->rows()) = MatrixXd::Identity(m_n[0], m_n[0]);
+				//	m_ci0[c_level].segment(i_in, constr->rows()) = -1.0 * constr->lowerBound();
+				//	i_in += constr->rows();
+				//	c_in = constr->rows() * 2;
+				//}
+
+				if (c_level >= 2 && cc_level == 2) {		
+					m_ce0[c_level].segment(0, m_neq[c_level-1]) += x_sol[c_level - 1].tail(m_neq[c_level-1]);
+					m_ci0[c_level].segment(24, m_nin[c_level-1]*2) += x_sol[c_level - 1].tail(m_neq[c_level - 1] + m_nin[c_level-1]*2).head(m_nin[c_level-1]*2);
+					
+					// 이전 테스크의 eq 갯수를 받아와서 넣어줘야 함,..
+					//m_ci0[c_level].segment(0, c_in) += x_sol[c_level - 1].segment(7, c_in);
+				} //fix me
 			}
+			cc_level++;
 		} // while 
+
+		//cout << "Ci" << m_CI[c_level] << endl;
+		//cout << "Ce" << m_CE[c_level] << endl;
 
 		 // slack variable for lb and ub
 		m_CI[c_level].block(m_CI[c_level].rows() - m_slack * 2 - m_nin[c_level] * 2, m_CI[c_level].cols() - m_slack, m_nin[c_level], m_nin[c_level]) = 1.0 * MatrixXd::Identity(m_nin[c_level], m_nin[c_level]);	

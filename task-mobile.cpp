@@ -11,7 +11,7 @@ namespace HQP
 
 		TaskMobile::TaskMobile(const std::string & name, RobotModel & robot) : // only mobile orientation
 			TaskMotion(name, robot),
-			m_constraint(name, 3, robot.nv()),
+			m_constraint(name, 6, robot.nv()),
 			m_ref(12, 6)
 		{
 			m_v_ref.setZero();
@@ -28,7 +28,9 @@ namespace HQP
 			m_Kd.setZero(6);
 			m_a_des.setZero(6);
 			m_J.setZero(6, robot.nv());
-			m_ori_ctrl = true;
+			m_ori_ctrl = false;
+
+
 		}
 
 		int TaskMobile::dim() const
@@ -64,6 +66,11 @@ namespace HQP
 		}
 		void TaskMobile::setOnlyOriCTRL(bool onlyori) {
 			m_ori_ctrl = onlyori;
+			if (m_ori_ctrl)
+				m_constraint.resize(3, m_robot.nv());
+			else
+				m_constraint.resize(6, m_robot.nv());
+
 		}
 		const TrajectorySample & TaskMobile::getReference() const
 		{
@@ -142,9 +149,7 @@ namespace HQP
 			m_v_error = v_frame - m_v_ref; 
 
 			m_v_error = actinv(oMi, m_v_error.vector());
-
-			///////// if only orientation control /////////////////
-
+		
 			m_p_error_vec = m_p_error.vector();
 			m_v_error_vec = m_v_error.vector();
 

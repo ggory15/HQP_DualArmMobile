@@ -92,7 +92,7 @@ int main()
 
 
 	postureTask = new tasks::TaskJointPosture("joint_control_task", *robot_);
-	double kp_posture = 30.0, w_posture = 1.00;
+	double kp_posture = 300.0, w_posture = 1.00;
 	postureTask->Kp(kp_posture*VectorXd::Ones(robot_->nv()-2));
 	postureTask->Kd(2.0*postureTask->Kp().cwiseSqrt());
 	invdyn_->addJointPostureTask(*postureTask, w_posture, 2, 0.0);
@@ -106,6 +106,7 @@ int main()
 	double kp_mobile = 300.0, w_mobile = 1.0;
 	mobileTask->Kp(kp_mobile*VectorXd::Ones(6));
 	mobileTask->Kd(2.0*mobileTask->Kp().cwiseSqrt());
+	mobileTask->setOnlyOriCTRL(false);
 
 
 	trajectories::TrajectoryBase *trajPosture = new trajectories::TrajectoryJointConstant("joint_traj", qdes);
@@ -188,9 +189,6 @@ int main()
 				if (time == 1.0 / Hz) {
 					T_endeffector = robot_->getTransformation(7);
 					T_endeffector.translation()(0) += 0.13;
-					
-					cout << "des" << T_endeffector.matrix() << endl;
-					cout << "real" << robot_->getTransformation(7).matrix() << endl;
 		
 					trajEE->setReference(T_endeffector);
 					s = trajEE->computeNext();
@@ -200,12 +198,20 @@ int main()
 					
 					T_mobile = robot_->getMobileTransformation();
 					T_mobile.setIdentity();
-					T_mobile.rotate(AngleAxisd(0.2, Vector3d::UnitZ()));
+					T_mobile.translation()(0) -= 5.0;
+					T_mobile.translation()(1) -= 0.0;
+					T_mobile.rotate(AngleAxisd(0.0, Vector3d::UnitZ()));
 					trajmobile->setReference(T_mobile);
 					s_mobile = trajmobile->computeNext();
 					mobileTask->setReference(s_mobile);
 					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);
 				}
+				if (time == 2.0 ) {
+					
+
+
+				}
+
 				
 				s = trajEE->computeNext();
 				moveTask->setReference(s);
@@ -218,7 +224,20 @@ int main()
 
 				if (time == 1 / Hz)
 					cout << solver::HQPDataToString(HQPData, true) << endl;
-				
+				if (time == 1) {
+					invdyn_->removeTask("end_effector_task");
+
+					invdyn_->removeTask("mobile_task");
+					T_endeffector = robot_->getTransformation(7);
+					T_endeffector.translation()(2) -= 0.13;
+
+					trajEE->setReference(T_endeffector);
+					s = trajEE->computeNext();
+					moveTask->setReference(s);
+
+					bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);
+				}
+
 		
 			//	cout << "sovler start" << endl;
 				const solver::HQPOutput & sol = solver->solve(HQPData);

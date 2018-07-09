@@ -55,8 +55,10 @@ HQP::robot::RobotModel::RobotModel(Type robottype) {
 
 	m_selection_.resize(5 + m_na_, m_na_ + 2);
 	m_selection_.setZero();
-	MatrixXd m_selection_dot_;
-
+	m_selection_dot_.resize(5 + m_na_, m_na_ + 2);
+	m_selection_dot_.setZero();
+	m_Mass_virtual_mat_.resize(5 + m_na_, 5 + m_na_);
+	m_Mass_virtual_mat_.setZero();
 	setRobot();
 }
 HQP::robot::RobotModel::~RobotModel() {
@@ -166,18 +168,23 @@ void HQP::robot::RobotModel::Transformation(const int & frame_id) { // for mobil
 }
 void HQP::robot::RobotModel::NLEtorque() { // for mobile
 	VectorXd NLE_virtual(5 + m_na_);
+	MassMatrix();
 	InverseDynamics(*model_, q_rbdl_, qdot_rbdl_, qddot_rbdl_, tau_);
 
 	for (int i = 0; i < 5 + m_na_; i++)
 		NLE_virtual(i) = tau_(i);
 
-	m_NLE_ = m_selection_.transpose() * NLE_virtual;
+	VectorXd q_real_dot(9);
+	q_real_dot.setZero();
+	q_real_dot.head(2) = qdot_rbdl_.head(2);
+
+	m_NLE_ = m_selection_.transpose() * NLE_virtual + m_selection_.transpose() * m_Mass_virtual_mat_ * m_selection_dot_ * q_real_dot;
 }
 void HQP::robot::RobotModel::MassMatrix() { // for mobile
 	MatrixXd Mass_virtual(5 + m_na_, 5 + m_na_);
 	Mass_virtual.setZero();
-	CompositeRigidBodyAlgorithm(*model_, q_rbdl_, Mass_virtual, true);
-	m_Mass_mat_ = m_selection_.transpose() * Mass_virtual * m_selection_;
+	CompositeRigidBodyAlgorithm(*model_, q_rbdl_, m_Mass_virtual_mat_, true);
+	m_Mass_mat_ = m_selection_.transpose() * m_Mass_virtual_mat_ * m_selection_;
 }
 void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const VectorXd & qdot) { // for mobile
 	q_rbdl_ = q;
@@ -205,12 +212,19 @@ void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const Vecto
 	m_selection_(0, 0) = c*(b*cos(q_rbdl_(2)) - d*sin(q_rbdl_(2)));
 	m_selection_(0, 1) = c*(b*cos(q_rbdl_(2)) + d*sin(q_rbdl_(2)));
 	m_selection_(1, 0) = c*(b*sin(q_rbdl_(2)) + d*cos(q_rbdl_(2)));
-	m_selection_(0, 1) = c*(b*sin(q_rbdl_(2)) - d*cos(q_rbdl_(2)));
+	m_selection_(1, 1) = c*(b*sin(q_rbdl_(2)) - d*cos(q_rbdl_(2)));
 
 	m_selection_(2, 0) = -c;
 	m_selection_(2, 1) = c;
 	m_selection_(3, 0) = 1.0;
 	m_selection_(4, 1) = 1.0;
+
+	m_selection_dot_(0, 0) = c*(-b*sin(q_rbdl_(2)) - d*cos(q_rbdl_(2)));
+	m_selection_dot_(0, 1) = c*(-b*sin(q_rbdl_(2)) + d*cos(q_rbdl_(2)));
+	m_selection_dot_(1, 0) = c*(b*cos(q_rbdl_(2)) - d*sin(q_rbdl_(2)));
+	m_selection_dot_(1, 1) = c*(b*cos(q_rbdl_(2)) + d*sin(q_rbdl_(2)));
+
+	m_selection_dot_ *= qdot(2);
 	
 }
 void HQP::robot::RobotModel::PointVelocity(const int & frame_id) {
