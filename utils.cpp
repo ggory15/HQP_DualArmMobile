@@ -88,4 +88,13 @@ namespace HQP {
 		//return MotionVector<double>(M.linear().transpose() * (s.head(3) -skew(M.translation()) * s.tail(3)), M.linear().transpose()*s.tail(3));
 		return MotionVector<double>(M.linear().transpose() * s.head(3), M.linear().transpose() * ( -1.0 * skew(M.translation()) * s.head(3) + s.tail(3)));
 	}
+	double h_factor(const double & x, const double & upper, const double & lower)
+	{
+		if (x > upper)
+			return 1.0;
+		else if (x < lower)
+			return 0.0;
+		else
+			return (-2.0*pow((x - lower), 3) / pow((upper - lower), 3) + 3.0*pow((x - lower), 2) / pow((upper - lower), 2));
+	}
 }

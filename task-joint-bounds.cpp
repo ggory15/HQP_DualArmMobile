@@ -70,10 +70,20 @@ namespace HQP
 					  m_constraint.upperBound()(i) = 2000.0;
 					  m_constraint.lowerBound()(i) = -2000.0;
 				  }
-				  MatrixXd A(m_robot.nv(), m_robot.nv());
-				  A.setIdentity();
-				  m_constraint.setMatrix(A);
 			  }
+			  //if (m_robot.getManipulability(0, m_robot.getJointPosition()) < 0.01) {
+				 // VectorXd Jd = m_robot.getManipulabilityJacobian(0);
+				 // for (int i = 0; i < dof / 2; i++) {
+					//  m_constraint.lowerBound()(i + 2) = 0.000005 / Jd(i) * (m_robot.getManipulability(0, m_robot.getJointPosition()) - 0.005);
+					//  if (m_constraint.lowerBound()(i + 2) > 2000.0)
+					//	  m_constraint.upperBound()(i + 2) = m_constraint.lowerBound()(i + 2);
+				 // }
+			  //}				  
+
+			  MatrixXd A(m_robot.nv(), m_robot.nv());
+			  A.setIdentity();
+			  m_constraint.setMatrix(A);
+
 			  return m_constraint;
 		  }
 	  }

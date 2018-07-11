@@ -29,6 +29,7 @@ namespace HQP
       m_Kd.setZero(6);
       m_a_des.setZero(6);
       m_J.setZero(6, robot.nv());
+	  m_singular = false;
     }
 
     int TaskOperationalSpace::dim() const
@@ -163,10 +164,79 @@ namespace HQP
 	  for (int i = 0; i < m_J.cols(); i++) {
 		  m_J.middleCols(i, 1) = actinv(oMi, m_J.middleCols(i, 1)).vector();
 	  } // world jacobian to local jacobian
-	 
-      m_constraint.setMatrix(m_J);
-      m_constraint.setVector(m_a_des);
-      return m_constraint;
+
+	  MatrixXd J_EE_left(6, 7);
+	  J_EE_left = m_J.block(0, 2, 6, 7);
+
+	  Eigen::ColPivHouseholderQR<MatrixXd> qr(J_EE_left);
+      MatrixXd U, Z, T;
+
+
+	  U = qr.matrixQ();
+	  VectorXd m_a_des_new;
+	  MatrixXd m_J_new;
+
+	  m_J_new = m_J;
+	   Z = qr.matrixR().topLeftCorner(6, 7).triangularView<Upper>();
+	  T = qr.colsPermutation();
+
+	  if (!m_singular) {
+		//  if (qr.matrixR().topLeftCorner(6, 7).triangularView<Upper>()(5, 5) < 0.05) {
+			  m_constraint.resize(5, m_robot.nv());
+			  m_a_des_new = U.topLeftCorner(6, 5).transpose() * m_a_des;			 
+			  m_J_new = U.topLeftCorner(6, 5).transpose() * m_J;
+
+			  m_constraint.setMatrix(m_J_new);
+			  m_constraint.setVector(m_a_des_new);
+			  return m_constraint;
+		 // }
+		  //else {
+			 // m_constraint.setMatrix(m_J);
+			 // m_constraint.setVector(m_a_des);
+			 // return m_constraint;
+		  //}
+	  }
+	  else {
+		  //if (qr.matrixR().topLeftCorner(6, 7).triangularView<Upper>()(5, 5) < 0.05) {
+			  m_J_new.resize(1, 16);
+			  m_J_new.setZero();
+			  m_constraint.resize(1, m_robot.nv());
+
+			  VectorXd new_a_set(1);
+			  MatrixXd new_J_set(1, 16);
+			  new_J_set = U.topRightCorner(6, 1).transpose() * m_J;
+			  double h_input = fabs(qr.matrixR().topLeftCorner(6, 7).triangularView<Upper>()(5, 5));
+			  m_a_des_new = h_factor(h_input, 0.1, 0.05) * U.topRightCorner(6, 1).transpose() * m_a_des;
+			 // cout << "h_facetor" << h_input << endl;
+
+			 /* for (int i = 0; i < 2; i++)
+				  m_J_new(0, i) = new_J_set(0, i);*/
+
+			  //for (int i = 0; i < 14; i++)
+			//	  m_J_new(0, i + 2) = new_J_set(0, i + 2);
+			  //m_J_new.topRows(1).head(2) = new_J_set.topRows(1).head(2).transpose();
+			//  m_J_new.bottomRows(1).tail(14) = new_J_set.tail(14);
+
+			  //new_a_set(0) = 0.0;// (U.topRightCorner(6, 1).transpose() * m_a_des)(0, 0);
+			  new_a_set(0) = 0.0;// h_factor(qr.matrixR().topLeftCorner(6, 7).triangularView<Upper>()(5, 5), 0.05, 0.005) * (U.topRightCorner(6, 1).transpose() * m_a_des)(0, 0);
+
+			//  m_a_des_new = U.topRightCorner(6, 1).transpose() * m_a_des;
+			 // m_J_new = U.topRightCorner(6, 1).transpose() * m_J;
+
+
+			  m_constraint.setMatrix(new_J_set);
+			  m_constraint.setVector(m_a_des_new);
+			  return m_constraint;
+		  }
+		  //else {
+			 // m_constraint.setMatrix(m_J);
+			 // m_constraint.setVector(m_a_des);
+			 // return m_constraint;
+		  //}
+	 //}	
+	  //m_constraint.setMatrix(m_J);
+	  //m_constraint.setVector(m_a_des);
+	  //return m_constraint;
     }    
   }
 }

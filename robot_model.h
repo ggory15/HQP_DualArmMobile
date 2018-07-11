@@ -82,9 +82,21 @@ namespace HQP {
 			const MotionVector<double> & getMobileVelocity() {
 				return m_mobile_dot_;
 			}
+			const double & getManipulability(const int & i, const VectorXd & q) {
+				Manipulability(q);
+				return m_manipulability_[i];
+			}
+			const VectorXd & getManipulabilityJacobian(const int & i) {
+				ManipulabilityJacobian();
+				return m_J_manipulability_[i];
+			}
+			const VectorXd & getJointPosition() {
+				return q_rbdl_;
+			}
 
 		private:			
 			void Jacobian(const int & frame_id);
+			void JacobianEE(const VectorXd & q);
 			void Position(const int & frame_id);
 			void Orientation(const int & frame_id);
 			void Transformation(const int & frame_id);
@@ -92,6 +104,8 @@ namespace HQP {
 			void MassMatrix();
 			void PointVelocity(const int & frame_id);
 			void setRobot();
+			void Manipulability(const VectorXd &  q);
+			void ManipulabilityJacobian();
 
 			Model* model_;
 			Body body_[dof];
@@ -138,6 +152,10 @@ namespace HQP {
 			Transform3d m_base_;
 
 			Type m_robot_type_;
+
+			double m_manipulability_[2];
+			VectorXd m_J_manipulability_[2];
+			MatrixXd m_J_EE[2];
 
 		protected:
 			unsigned int m_nv_;

@@ -11,7 +11,7 @@ namespace HQP {
 	MotionVector<double> log6(Transform3d & M);
 	MotionVector<double> actinv(const Transform3d & M, const VectorXd & s);
 	Matrix3d skew(const VectorXd s);
-
+	double h_factor(const double & x, const double & upper, const double & lower);
 }
 #endif __HQP__MATH__SE3__
 

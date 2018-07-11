@@ -44,6 +44,9 @@ namespace HQP
       void Kp(Cref_vectorXd Kp);
       void Kd(Cref_vectorXd Kp);
 
+	  void setSingular(const bool & singular) {
+		  m_singular = singular;
+	  }
       //Index frame_id() const;
 
     protected:
@@ -61,6 +64,7 @@ namespace HQP
       Matrix6x m_J;
       ConstraintEquality m_constraint;
       TrajectorySample m_ref;
+	  bool m_singular;
     };    
   }
 }

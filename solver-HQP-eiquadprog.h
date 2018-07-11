@@ -60,6 +60,7 @@ namespace HQP
 			unsigned int m_nbound[5];
 			unsigned int m_n[5];    /// number of variables
 			unsigned int m_slack;
+			
 		};
 	}
 }

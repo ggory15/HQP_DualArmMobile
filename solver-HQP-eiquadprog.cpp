@@ -8,8 +8,9 @@ using namespace Eigen;
 
 using namespace std;
 #define max_level 5
-#define q_tol 0.0001
+#define q_tol 0.000000001
 
+EiquadprogFast m_solver;
 SolverHQuadProg::SolverHQuadProg(const std::string & name) :
 	SolverHQPBase(name),
 	m_hessian_regularization(DEFAULT_HESSIAN_REGULARIZATION)
@@ -150,6 +151,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 				const ConstraintBase* constr = it->second;
 				if (constr->isEquality())
 				{
+					
 					m_CE[c_level].block(i_eq, 0, constr->rows(), constr->cols()) = constr->matrix();
 					m_ce0[c_level].segment(i_eq, constr->rows()) = -constr->vector();
 					i_eq += constr->rows();
@@ -178,7 +180,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 
 				if (c_level >= 2 && cc_level == 2) {		
 					m_ce0[c_level].segment(0, m_neq[c_level-1]) += x_sol[c_level - 1].tail(m_neq[c_level-1]);
-					m_ci0[c_level].segment(24, m_nin[c_level-1]*2) += x_sol[c_level - 1].tail(m_neq[c_level - 1] + m_nin[c_level-1]*2).head(m_nin[c_level-1]*2);
+				//	m_ci0[c_level].segment(32, m_nin[c_level-1]*2) += x_sol[c_level - 1].tail(m_neq[c_level - 1] + m_nin[c_level-1]*2).head(m_nin[c_level-1]*2);
 					
 					// 이전 테스크의 eq 갯수를 받아와서 넣어줘야 함,..
 					//m_ci0[c_level].segment(0, c_in) += x_sol[c_level - 1].segment(7, c_in);
@@ -209,7 +211,7 @@ const HQPOutput & SolverHQuadProg::solve(const HQPData & problemData)
 		//  s.t.
 		//  CE^T x + ce0 = 0
 		//  CI^T x + ci0 >= 0
-		m_objValue[c_level] = solve_quadprog(m_H[c_level], m_g[c_level], m_CE[c_level].transpose(), m_ce0[c_level], m_CI[c_level].transpose(), m_ci0[c_level], x_sol[c_level], m_activeSet[c_level], m_activeSetSize[c_level]);
+		m_objValue[c_level] = m_solver.solve_quadprog(m_H[c_level], m_g[c_level], m_CE[c_level], m_ce0[c_level], m_CI[c_level], m_ci0[c_level], x_sol[c_level]);
 
 		if (m_objValue[c_level] == std::numeric_limits<double>::infinity()) {
 			m_output.status = HQP_STATUS_INFEASIBLE;

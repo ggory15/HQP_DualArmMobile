@@ -156,6 +156,26 @@ bool InverseDynamics::addJointLimitTask(TaskJointLimit & task, double weight, un
 
 	return true;
 }
+bool InverseDynamics::addSingularityTask(TaskSingularityAvoidance & task, double weight, unsigned int priorityLevel, double transition_duration) {
+	assert(weight >= 0.0);
+	assert(transition_duration >= 0.0);
+
+	// This part is not used frequently so we can do some tests.
+	if (weight >= 0.0)
+		std::cerr << __FILE__ << " " << __LINE__ << " "
+		<< "weight should be positive" << std::endl;
+
+	// This part is not used frequently so we can do some tests.
+	if (transition_duration >= 0.0) {
+		std::cerr << "transition_duration should be positive" << std::endl;
+	}
+
+	TaskLevel *tl = new TaskLevel(task, priorityLevel);
+	m_taskMotions.push_back(tl);
+	addTask(tl, weight, priorityLevel);
+
+	return true;
+}
 bool InverseDynamics::addOperationalTask(TaskSE3Equality & task, double weight, unsigned int priorityLevel, double transition_duration)
 {
 	assert(weight >= 0.0);
@@ -278,6 +298,7 @@ const HQPData & InverseDynamics::computeProblemData(double time, VectorXd q, Vec
 			const ConstraintBase & c = (*it)->task.compute(time, q, v);
 			if (c.isEquality())
 			{
+				(*it)->constraint->resize(c.matrix().rows(), c.matrix().cols());
 				(*it)->constraint->matrix().leftCols(m_v) = c.matrix();
 				(*it)->constraint->vector() = c.vector();
 			}
@@ -413,4 +434,16 @@ bool InverseDynamics::removeFromHqpData(const std::string & name)
 	}
 	return false;
 }
-
+bool InverseDynamics::checkTask(const string & name)
+{
+	bool found = false;
+	for (HQPData::iterator it = m_hqpData.begin(); !found && it != m_hqpData.end(); it++)
+	{
+		for (ConstraintLevel::iterator itt = it->begin(); !found && itt != it->end(); itt++)
+		{
+			if (itt->second->name() == name)
+				return true;
+		}
+	}
+	return false;				
+}

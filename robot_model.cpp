@@ -208,6 +208,29 @@ void HQP::robot::RobotModel::Jacobian(const int & frame_id) { //?
 		m_J_.block(i * 3, 0, 3, m_na_ + 2) = J_temp.block(3 - i * 3, 0, 3, m_na_ + 2);
 	}
 }
+void  HQP::robot::RobotModel::JacobianEE(const VectorXd & q) {
+	VectorXd q_temp(m_na_ + 5);
+	MatrixXd J_temp(6, m_na_ + 5);
+	q_temp.setZero();
+	
+	m_J_EE[0].resize(6, dof / 2);
+	m_J_EE[0].setZero();
+	q_temp.segment(5, dof / 2) = q.segment(5, dof / 2);
+	CalcPointJacobian6D(*model_, q_temp, body_id_[6], com_position_[6], J_temp, true);
+	for (int i = 0; i < 2; i++) {
+		m_J_EE[0].block(i * 3, 0, 3, dof / 2) = J_temp.block(3 - i * 3, 5, 3, dof / 2);
+	}
+
+	m_J_EE[1].resize(6, dof / 2);
+	m_J_EE[1].setZero();
+	q_temp.setZero();
+	q_temp.segment(5 + dof /2, dof / 2) = q.segment(5 + dof / 2, dof / 2);
+
+	CalcPointJacobian6D(*model_, q_temp, body_id_[13], com_position_[13], J_temp, true);
+	for (int i = 0; i < 2; i++) {
+		m_J_EE[1].block(i * 3, 0, 3, dof / 2) = J_temp.block(3 - i * 3, 5 + dof / 2, 3, dof / 2);
+	}
+}
 void HQP::robot::RobotModel::Position(const int & frame_id) { // for mobile
 	m_pos_ = CalcBodyToBaseCoordinates(*model_, q_rbdl_, body_id_[frame_id - 1], com_position_[frame_id - 1], true);
 }
@@ -239,6 +262,29 @@ void HQP::robot::RobotModel::MassMatrix() { // for mobile
 	Mass_virtual.setZero();
 	CompositeRigidBodyAlgorithm(*model_, q_rbdl_, m_Mass_virtual_mat_, true);
 	m_Mass_mat_ = m_selection_.transpose() * m_Mass_virtual_mat_ * m_selection_;
+}
+void HQP::robot::RobotModel::Manipulability(const VectorXd &  q) {
+	JacobianEE(q);
+	m_manipulability_[0] = sqrt( (m_J_EE[0] * m_J_EE[0].transpose()).determinant());
+	m_manipulability_[1] = sqrt((m_J_EE[1]* m_J_EE[1].transpose()).determinant());
+}
+void HQP::robot::RobotModel::ManipulabilityJacobian() {	
+	m_J_manipulability_[0].resize(dof / 2);
+	m_J_manipulability_[1].resize(dof / 2);
+	VectorXd q = q_rbdl_;
+	Manipulability(q);
+	const double mani_0 = m_manipulability_[0];
+	const double mani_1 = m_manipulability_[1];
+
+	const double h = 0.0000001;
+	for (int i = 0; i < dof / 2; i++) {
+		q(i + 5) += h;
+		q(i + 5 + dof / 2) += h;
+		Manipulability(q);
+		m_J_manipulability_[0](i) = (m_manipulability_[0] - mani_0) / h;
+		m_J_manipulability_[1](i) = (m_manipulability_[1] - mani_1) / h;
+		q = q_rbdl_;
+	}
 }
 void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const VectorXd & qdot) { // for mobile
 	q_rbdl_ = q;
@@ -281,6 +327,7 @@ void HQP::robot::RobotModel::getUpdateKinematics(const VectorXd & q, const Vecto
 	m_selection_dot_ *= qdot(2);
 	
 }
+
 void HQP::robot::RobotModel::PointVelocity(const int & frame_id) {
 	p_dot_ = CalcPointVelocity6D(*model_, q_rbdl_, qdot_rbdl_, body_id_[frame_id - 1], com_position_[frame_id - 1]);
 	m_p_dot_.angular() = p_dot_.head<3>();

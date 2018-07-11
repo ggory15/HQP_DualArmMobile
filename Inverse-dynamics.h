@@ -14,6 +14,7 @@
 #include "task-operational.h"
 #include "task-joint-bounds.h"
 #include "task-mobile.h"
+#include "task-singularity.h"
 // for solvers
 #include "solver-HQP-qpoases.h"
 // for contact
@@ -61,6 +62,7 @@ namespace HQP {
 		typedef tasks::TaskJointPosture TaskJointPosture;
 		typedef tasks::TaskOperationalSpace TaskSE3Equality;
 		typedef tasks::TaskJointLimit TaskJointLimit;
+		typedef tasks::TaskSingularityAvoidance TaskSingularityAvoidance;
 		//typedef tasks::TaskContactForce TaskContactForce;
 		//typedef tasks::TaskActuation TaskActuation;
 		typedef solver::HQPOutput HQPOutput;
@@ -78,6 +80,7 @@ namespace HQP {
 		bool addMotionTask(TaskMotion & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addJointPostureTask(TaskJointPosture & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addJointLimitTask(TaskJointLimit & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
+		bool addSingularityTask(TaskSingularityAvoidance & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addOperationalTask(TaskSE3Equality & task, double weight, unsigned int priorityLevel, double transition_duration = 0.0);
 		bool addRigidContact(ContactBase & contact, unsigned int priorityLevel);
 
@@ -96,6 +99,7 @@ namespace HQP {
 		void resizeHqpData();
 		bool removeFromHqpData(const std::string & name);
 		bool decodeSolution(const HQPOutput & sol);
+		bool checkTask(const std::string & name);
 
 
 	public:
