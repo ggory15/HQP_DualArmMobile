@@ -2,7 +2,6 @@
 #include "vrep_bridge.h"
 
 //for robot model
-#include "robot_model.h"
 
 //for controller 
 #include "Inverse-dynamics.h"
@@ -22,6 +21,8 @@
 // for solver
 #include "solver-HQP-factory.hxx"
 #include "solver-utils.h"
+#include "solver-HQP-eiquadprog.h"
+#include "solver-HQP-qpoases.h"
 //#include <tsid/math/utils.hpp>
 
 // for contact point
@@ -34,7 +35,7 @@
 #include <conio.h> // for keyboard hit
 
 // for time check
-#define timer
+//#define timer
 #ifdef timer
 #include <windows.h>
 	double PCFreq = 0.0;
@@ -69,6 +70,9 @@ HQP::tasks::TaskJointLimit * jointLimitTask;
 HQP::contact::Contact3dPoint * contactTask;
 HQP::tasks::TaskSingularityAvoidance * singularTask;
 
+
+
+
 VectorXd q(dof);
 VectorXd qdot(dof);
 VectorXd qdes(dof);
@@ -94,18 +98,19 @@ int main()
 	q.setZero();
 	qdot.setZero();	
 
-	solver::SolverHQPBase * solver = solver::SolverHQPFactory::createNewSolver(solver::SOLVER_HQP_EIQUADPROG, "solver-eiquadprog");	
+	solver::SolverHQPBase * solver = solver::SolverHQPFactory::createNewSolver(solver::SOLVER_HQP_EIQUADPROG, "solver-eiquadprog");
 	
+
 	// Level 0 : Joint Velocity Limit for Mobile + Manipulator 
-	q_lb = -180.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
+	q_lb = -100.0 / 180.0 * M_PI * VectorXd(dof + 2).setOnes();
 	q_ub = -1.0*q_lb;
 	//q_ub(5) = 45.0 * M_PI / 180.0;
-	q_lb.head(2) = -30.0 * VectorXd(2).setOnes();
-	q_ub.head(2) = 30.0 * VectorXd(2).setOnes();
+	q_lb.head(2) = -0.0 * VectorXd(2).setOnes();
+	q_ub.head(2) = 0.0 * VectorXd(2).setOnes();
 
-	double kp_jointlimit = 30.0, w_jointlimit = 1.00;
+	double kp_jointlimit = 100.0, w_jointlimit = 1.00;
 	
-	singularTask = new tasks::TaskSingularityAvoidance("sigunalr", *robot_);
+	singularTask = new tasks::TaskSingularityAvoidance("singular", *robot_);
 	singularTask->Kp(kp_jointlimit * VectorXd::Ones(1));
 	singularTask->Kd(2.0*singularTask->Kp().cwiseSqrt());
 	
@@ -113,29 +118,28 @@ int main()
 	
 	jointLimitTask = new tasks::TaskJointLimit("joint_limit_task", *robot_);
 	jointLimitTask->Kp(kp_jointlimit*VectorXd::Ones(robot_->nv()));
-	jointLimitTask->Kd(2.0*jointLimitTask->Kp().cwiseSqrt());
+	jointLimitTask->Kd(4.0*jointLimitTask->Kp().cwiseSqrt());
 	jointLimitTask->setJointLimit(q_lb, q_ub);
 
-	invdyn_->addJointLimitTask(*jointLimitTask, w_jointlimit, 0, 0.0);
-
+	invdyn_->addJointLimitTask(*jointLimitTask, 0.0,0, 0.0);
 
 
 	qdes = 20.0 / 180.0 * 3.14*VectorXd(dof).setOnes();
 	qdes.setZero();
 	//qdes(1) = 30.0 * M_PI / 180.0;
-	qdes(3) = -70.0 * M_PI/180.0;
-	qdes(10) = -70.0 * M_PI / 180.0;
+	qdes(3) = -50.0 * M_PI/180.0;
+	qdes(10) = -50.0 * M_PI / 180.0;
 	//qdes(3) = 90.0 * M_PI / 180.0;
 	//qdes(5) = -90.0 * M_PI / 180.0;
 	
 	postureTask = new tasks::TaskJointPosture("joint_control_task", *robot_);
-	double kp_posture = 100.0, w_posture = 1.00;
+	double kp_posture = 300.0, w_posture = 1.00;
 	postureTask->Kp(kp_posture*VectorXd::Ones(robot_->nv()-2));
 	postureTask->Kd(2.0*postureTask->Kp().cwiseSqrt());
-	invdyn_->addJointPostureTask(*postureTask, 1.0, 2, 0.0);
+	//invdyn_->addJointPostureTask(*postureTask, 1.0, 2, 0.0);
 
 	moveTask = new tasks::TaskOperationalSpace("end_effector_task", *robot_, 7);
-	double kp_move = 300.0, w_move = 1.0;
+	double kp_move = 100.0, w_move = 1.0;
 	VectorXd a = VectorXd::Ones(6);
 	a.tail(3) *= 10.0;
 	moveTask->Kp(kp_move*a);
@@ -148,7 +152,7 @@ int main()
 	move2Task->setSingular(true);
 
 	mobileTask = new tasks::TaskMobile("mobile_task", *robot_);
-	double kp_mobile = 1000.0, w_mobile = 1.0; // 400 -> 9 deg 
+	double kp_mobile = 100.0, w_mobile = 1.0; // 400 -> 9 deg 
 	mobileTask->Kp(kp_mobile*VectorXd::Ones(6));
 	mobileTask->Kd(2.0*mobileTask->Kp().cwiseSqrt());
 	mobileTask->setOnlyOriCTRL(true);
@@ -159,9 +163,12 @@ int main()
 	trajectories::TrajectorySample samplePosture(robot_->nv()-2);
 	//
 	Transform3d T_endeffector;
+	Transform3d init_T, goal_T;
+	double duration, stime;
 	trajectories::TrajectorySample s(12, 6);
 	trajectories::TrajectoryOperationConstant *trajEE = new trajectories::TrajectoryOperationConstant("operational_traj", T_endeffector);
 	//
+
 	Transform3d T_mobile;
 	trajectories::TrajectorySample s_mobile(12, 6);
 	trajectories::TrajectoryOperationConstant *trajmobile = new trajectories::TrajectoryOperationConstant("mobile_traj", T_mobile);
@@ -272,38 +279,35 @@ int main()
 				
 				robot_->getUpdateKinematics(q_current, qdot_current);
 
-			//	cout << "miani double" << robot_->getManipulability(0, q_current) << endl;
-				
 				if (time == 1.0 / Hz) {
+					init_T = robot_->getTransformation(7);
+					goal_T = init_T;
+					goal_T.translation()(0) += 0.33;
 					T_endeffector = robot_->getTransformation(7);
 					T_endeffector.translation()(0) += 0.33;
 					//T_endeffector.translation()(1) -= 0.13;
 		
 					trajEE->setReference(T_endeffector);
-					s = trajEE->computeNext();
-					moveTask->setReference(s);
-					move2Task->setReference(s);
 
 					//bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);	
 					
 					invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);
-					invdyn_->addOperationalTask(*move2Task, w_move, 1, 0.0);
+					//invdyn_->addOperationalTask(*moveTask, w_move, 3, 0.0);
+
+					invdyn_->addOperationalTask(*move2Task, w_move, 2, 0.0);
 					
 					T_mobile = robot_->getMobileTransformation();
 					trajmobile->setReference(T_mobile);
 					s_mobile = trajmobile->computeNext();
-					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);
+					invdyn_->addMotionTask(*mobileTask, w_mobile, 3, 0.0);
 					mobileTask->setReference(s_mobile);
-					//
-				}
-				if (time == 0.5 ) {
-				//	invdyn_->removeTask("end_effector_task");
-					cout << "remove task" << endl;
-				}
-				
 
-			/*	if (time == 1.0)
-					invdyn_->addMotionTask(*mobileTask, w_mobile, 2, 0.0);*/
+				}
+
+				s = trajEE->computeNext();
+				moveTask->setReference(s);
+				move2Task->setReference(s);
+
 				MatrixXd J_EE_left(6, 7);
 				J_EE_left = robot_->getJacobian(7).block(0, 2, 6, 7);
 
@@ -338,21 +342,18 @@ int main()
 				samplePosture = trajPosture->computeNext();
 				postureTask->setReference(samplePosture);
 				const solver::HQPData & HQPData = invdyn_->computeProblemData(time, q_current, qdot_current);
-				if (time == 1/Hz)
+				if (time == 1/Hz || time == 0.5 ||  time==1.0)
 					cout << solver::HQPDataToString(HQPData, true) << endl;
 				
 
 			//	if (time == 1) {
 			//		invdyn_->removeTask("end_effector_task");
-
 			//		invdyn_->removeTask("mobile_task");
 			//		T_endeffector = robot_->getTransformation(7);
 			//		T_endeffector.translation()(2) -= 0.13;
-
 			//		trajEE->setReference(T_endeffector);
 			//		s = trajEE->computeNext();
 			//		moveTask->setReference(s);
-
 			//		bool sucess = invdyn_->addOperationalTask(*moveTask, w_move, 1, 0.0);
 			//	}
 
@@ -362,7 +363,6 @@ int main()
 				const VectorXd & tau = invdyn_->getActuatorForces(sol);
 				VectorXd dv = invdyn_->getAccelerations(sol);
 
-			//	//cout << "contact force " << invdyn_->getContactForces(sol).transpose() << endl;
 
 				vb.desired_base_vel_(0) = dv(0);
 				vb.desired_base_vel_(1) = dv(1);

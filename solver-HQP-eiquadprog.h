@@ -26,6 +26,16 @@ namespace HQP
 			double getObjectiveValue();
 			double getObjectiveValue2(unsigned int level);
 
+			//void getTaskOrder(MatrixXd TaskOrder) {
+			//	Task_Order = TaskOrder;
+			//	return Task_Order;
+			//};
+			bool get_dim = true;
+			typedef std::vector<int> task_type;
+			typedef std::vector<int> task_order;
+			task_type task_type_;
+			task_order task_order_;
+			typedef std::vector<task_order> task_order_whole;
 		protected:
 
 			void sendMsg(const std::string & s);
@@ -56,11 +66,12 @@ namespace HQP
 #endif
 
 			unsigned int m_neq[5];  /// number of equality constraints
+			unsigned int m_neq_t[5]; // number of equality constraints total
 			unsigned int m_nin[5];  /// number of inequality constraints
+			unsigned int m_nin_t[5];
 			unsigned int m_nbound[5];
 			unsigned int m_n[5];    /// number of variables
 			unsigned int m_slack;
-			
 		};
 	}
 }
