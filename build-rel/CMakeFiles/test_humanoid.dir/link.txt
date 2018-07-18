@@ -1,1 +1,0 @@
-/usr/bin/c++     -pedantic -Wno-long-long -Wall -Wextra -Wcast-align -Wcast-qual -Wformat -Wwrite-strings -Wconversion -std=c++11 -O3 -DNDEBUG   CMakeFiles/test_humanoid.dir/demo-humanoid/main.cpp.o  -o test_humanoid -rdynamic src/libHQP.so -lrbdl -lqpOASES -lpthread -Wl,-rpath,/home/ggory15/TSID_project/build-rel/src 
