@@ -8,6 +8,7 @@ I modified some function and added some tasks for controlling robot safely.
 (For instance, task transition algorithm, singularity avoidance algorithm, and self-collision avoidance algorithm)
 
 ```Dependency```
+
 Eigen Library
 
 RBDL Library
@@ -17,6 +18,7 @@ qpOASES Library
 V-REP for simulation
 
 ```Cmake Setting```
+
 DoF: the number of Joint
 
 author: ggory15@snu.ac.kr
