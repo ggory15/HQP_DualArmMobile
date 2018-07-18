@@ -1,0 +1,2 @@
+/usr/bin/ar qc libglobal_lib.a  CMakeFiles/global_lib.dir/controller.cpp.o CMakeFiles/global_lib.dir/vrep_bridge.cpp.o CMakeFiles/global_lib.dir/fcl_utility.cpp.o CMakeFiles/global_lib.dir/fcl_model.cpp.o CMakeFiles/global_lib.dir/home/kendrick/vrep/programming/remoteApi/extApi.c.o CMakeFiles/global_lib.dir/home/kendrick/vrep/programming/remoteApi/extApiPlatform.c.o
+/usr/bin/ranlib libglobal_lib.a
