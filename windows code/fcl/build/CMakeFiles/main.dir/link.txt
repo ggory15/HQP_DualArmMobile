@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++11 -O3 -DNDEBUG   CMakeFiles/main.dir/main.cpp.o  -o main  -L/opt/openrobots/lib -rdynamic libglobal_lib.a /usr/local/lib/librbdl.so -lpthread -lccd /usr/local/lib/libfcl.so.0.5.0 -loctomap -loctomath -lboost_filesystem -lboost_system -Wl,-rpath,/opt/openrobots/lib:/usr/local/lib 
