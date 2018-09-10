@@ -6,13 +6,15 @@ The abstract is here: http://dyros.snu.ac.kr/HQPtasks
 This code is based on https://github.com/stack-of-tasks/tsid. 
 Based on this code, I rewrote the code in order to use in Windows and Linux with V-Rep.
 
-This code will be used by using
+This code consists of four types.
 
-V-Rep with 7-DoF arm (branch: fixed-robot)
-V-Rep with mobile based with single arm (branch: MobileManipulator)
-V-Rep with dual arm mobile manipulator (branch: DualArmManipulator) in Windows.
+1) V-Rep with 7-DoF arm (branch: fixed-robot)
 
-V-Rep with dual arm mobile manipulator (branch: Ubuntu16.04) in Linux.
+2) V-Rep with mobile based with single arm (branch: MobileManipulator)
+
+3) V-Rep with dual arm mobile manipulator (branch: DualArmManipulator) in Windows.
+
+4) V-Rep with dual arm mobile manipulator (branch: Ubuntu16.04) in Linux.
 
 You can find the controller for real-time in https://github.com/ggory15/HQP_Robostar. 
 
