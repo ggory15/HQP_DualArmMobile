@@ -20,4 +20,4 @@ You can find the controller for real-time in https://github.com/ggory15/HQP_Robo
 
 This code is operating well by itself, but I didn't upload the final source code until accepting my paper. So if you want to use the code with final version during under review, plz send the mail to me (ggory15@snu.ac.kr)
 
-Dependancy: qpOASES (for solgving QP), Eigen (for calculating linear algebra), RBDL(for getting a robot dynamics).
+Dependancy: qpOASES (for solgving QP), Eigen (for calculating linear algebra), RBDL (for getting a robot dynamics).
