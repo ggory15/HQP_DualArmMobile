@@ -1,7 +1,7 @@
 # HQP_DualArmMobile
 
-This is the continous transition algorithm using Hierarchical Qudratic Programming(HQP).
-The abstract is here: http://dyros.snu.ac.kr/HQPtasks
+This is the continuous transition algorithm using Hierarchical Qudratic Programming(HQP).
+The abstract and video clips are avaliable in the following website: http://dyros.snu.ac.kr/HQPtasks
 
 This code is based on https://github.com/stack-of-tasks/tsid. 
 Based on this code, I rewrote the code in order to use in Windows and Linux with V-Rep.
